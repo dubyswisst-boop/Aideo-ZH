@@ -1,0 +1,928 @@
+export type StreamingQuality = 'best_available' | 'standard_lossless' | 'data_saver';
+
+export type MatchAssessment = 'equivalent' | 'candidate' | 'uncertain' | 'rejected';
+
+export interface PlaybackSource {
+  provider: 'local' | 'tidal' | 'qobuz' | 'youtube';
+  // A local absolute path or a provider ID; never a resolved streaming URL.
+  id: string;
+  catalog_quality?: SourceQuality | null;
+  metadata?: SourceMetadata | null;
+  recording_evidence?: RecordingEvidence | null;
+  match_assessment?: MatchAssessment | null;
+  match_reason?: string | null;
+}
+
+export type SourceMetadata = Pick<Track, 'title' | 'artist' | 'album' | 'duration' | 'duration_raw' | 'cover_url' | 'track_number' | 'disc_number'>;
+
+export interface SourceQuality {
+  lossless?: boolean | null;
+  sample_rate?: number | null;
+  bit_depth?: number | null;
+  codec?: string | null;
+}
+
+export interface RecordingEvidence {
+  isrc?: string | null;
+  upc?: string | null;
+  version?: string | null;
+  explicit?: boolean | null;
+}
+
+export type SourceSelection = { mode: 'auto' } | { mode: 'explicit'; source: PlaybackSource };
+
+export interface RecordingSources {
+  recording_id: string;
+  sources: PlaybackSource[];
+  selection: SourceSelection;
+  display_candidates?: PlaybackSource[];
+  match_version?: number;
+}
+
+export interface Track {
+  id: number;
+  path: string;
+  title: string | null;
+  artist: string | null;
+  album?: string | null;
+  duration: number | null;
+  format: string | null;
+  genre?: string | null;
+  lyric_offset: number;
+  cover_url?: string | null;
+  duration_raw?: string | null;
+  is_autoplay?: boolean;
+  is_generated_mix?: boolean;
+  recommendation_reason?: string;
+  loved?: number;
+  disliked?: number;
+  path_hash?: string | null;
+  bpm?: number | null;
+  energy?: number | null;
+  bass_ratio?: number | null;
+  treble_ratio?: number | null;
+  track_number?: number | null;
+  disc_number?: number | null;
+  playlist_entry_id?: number;
+  queue_occurrence_id?: string;
+  // Absence preserves the legacy path-based source choice.
+  source_context?: RecordingSources | null;
+  recording_evidence?: RecordingEvidence;
+  catalog_quality?: SourceQuality;
+  active_source?: PlaybackSource;
+  active_quality?: SourceQuality;
+}
+
+export interface CloudTrack {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  cover_url: string | null;
+  stream_url: string;
+  provider: 'subsonic' | 'jellyfin';
+  track_number?: number | null;
+  disc_number?: number | null;
+}
+
+export interface BatchDownloadItem {
+  url: string;
+  title: string;
+  artist: string;
+  album?: string;
+  cover_url?: string | null;
+  track_number?: number;
+  duration_raw?: string;
+}
+
+export interface BatchDownloadProgress {
+  completed: number;
+  total: number;
+  current_title: string;
+  percent: number;
+  is_done: boolean;
+  error?: string | null;
+}
+
+export interface YoutubeTrack {
+  id: string;
+  title: string;
+  artist: string;
+  cover_url: string | null;
+  duration_raw: string;
+  url: string;
+  recommendation_source?: string | null;
+  path?: string;
+  format?: string;
+  duration?: number;
+  album?: string | null;
+  source_context?: RecordingSources;
+  recording_evidence?: RecordingEvidence;
+}
+
+export interface YoutubeMix {
+  id: string;
+  title: string;
+  description: string;
+  cover_url: string | null;
+  tracks: YoutubeTrack[];
+}
+
+export interface DiscoveryHubData {
+  recommendations: YoutubeTrack[];
+  global_charts: YoutubeTrack[];
+  mixed_for_you: YoutubeMix[];
+  recently_played?: YoutubeTrack[];
+  heavy_rotation?: YoutubeTrack[];
+  forgotten_gems?: YoutubeTrack[];
+  playlist_mixes?: YoutubeMix[];
+  tidal_hifi?: YoutubeTrack[];
+}
+
+export interface Playlist {
+  id: number;
+  name: string;
+}
+
+export interface AudioTagData {
+  path: string;
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+  album_artist?: string | null;
+  year?: string | null;
+  genre?: string | null;
+  track_number?: number | null;
+  track_total?: number | null;
+  disc_number?: number | null;
+  disc_total?: number | null;
+  comment?: string | null;
+  lyrics?: string | null;
+  cover_data_url?: string | null;
+  format?: string | null;
+  duration_secs?: number | null;
+  file_size_bytes?: number | null;
+  bitrate?: number | null;
+  sample_rate?: number | null;
+  bit_depth?: number | null;
+  channels?: number | null;
+}
+
+export interface AudioTagUpdate {
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+  album_artist?: string | null;
+  year?: string | null;
+  genre?: string | null;
+  track_number?: number | null;
+  track_total?: number | null;
+  disc_number?: number | null;
+  disc_total?: number | null;
+  comment?: string | null;
+  lyrics?: string | null;
+  cover_base64?: string | null;
+  remove_cover?: boolean | null;
+}
+
+export interface AudioTagBatchUpdate {
+  artist?: string | null;
+  album?: string | null;
+  album_artist?: string | null;
+  year?: string | null;
+  genre?: string | null;
+  comment?: string | null;
+  cover_base64?: string | null;
+  remove_cover?: boolean | null;
+}
+
+export interface UpnpDevice {
+  id: string;
+  name: string;
+  manufacturer: string;
+  model_name: string;
+  location: string;
+  ip: string;
+  av_transport_url?: string | null;
+  rendering_control_url?: string | null;
+  is_connected: boolean;
+}
+
+export interface LyricWord {
+  time_secs: number;
+  duration_secs?: number;
+  text: string;
+}
+
+export type LyricsDisplayMode = 'karaoke' | 'line_sync' | 'static';
+
+export interface LyricLine {
+  time_secs: number;
+  text: string;
+  romaji?: string;
+  translation?: string;
+  words?: LyricWord[];
+}
+
+export interface EQBand {
+  freq: number;
+  gain: number;
+  q: number;
+  band_type: string; // 'lowshelf' | 'peaking' | 'highshelf'
+}
+
+export interface DSPState {
+  enabled: boolean;
+  low_spec_mode: boolean;
+  audio_profile: 'low' | 'normal' | 'high' | 'custom';
+  resampler_interpolation: 'linear' | 'cubic';
+  resampler_sinc_len: 64 | 128 | 256;
+  resampler_oversampling: 128 | 256 | 512;
+  ffmpeg_transcode_quality: 'standard' | 'studio' | 'hires' | 'native';
+  width: number;
+  upsample_rate: number;
+  dither: boolean;
+  exclusive_mode_timing: 'event' | 'polling';
+  preamp_gain: number;
+  limiter_threshold: number;
+  resampler_phase_mode: 'linear' | 'minimum' | 'intermediate';
+
+  // EQ
+  eq_enabled: boolean;
+  eq_parametric: boolean;
+  eq_graphic_gains: number[];
+  eq_parametric_bands: EQBand[];
+
+  // Crossfeed
+  crossfeed_enabled: boolean;
+  crossfeed_level: number;
+  crossfeed_corner: number;
+  crossfeed_mode?: 'bs2b' | 'meier' | 'custom';
+
+  // Soundstage
+  spatial_enabled: boolean;
+  spatial_haas_delay: number;
+  spatial_wet: number;
+  convolution_enabled: boolean;
+  convolution_ir_path: string;
+  convolution_wet: number;
+
+  // Dynamics
+  subsonic_enabled: boolean;
+  night_mode_enabled: boolean;
+  r128_enabled: boolean;
+
+  // Aideo Filter
+  aideo_filter_enabled: boolean;
+  aideo_filter_room_size: number;
+  aideo_filter_bass_thump: number;
+  aideo_filter_dampening: number;
+  auto_headroom: boolean;
+  saturation_enabled: boolean;
+  saturation_drive: number;
+  crossfade_transition_enabled: boolean;
+  crossfade_transition_duration: number;
+  stream_engine: 'yt-dlp' | 'reqwest';
+  lookahead_prebuffer_enabled: boolean;
+  track_replaygain_gain?: number;
+  playback_rate?: number;
+}
+
+
+
+
+export interface AudioFormatSnapshot {
+  sample_rate: number;
+  channels: number;
+  sample_format?: string | null;
+  bits_per_sample?: number | null;
+  valid_bits_per_sample?: number | null;
+  channel_mask?: number | null;
+}
+
+export interface EffectiveAudioPath {
+  active: boolean;
+  engine: string;
+  share_mode: string;
+  source: AudioFormatSnapshot;
+  pipeline_sample_format: string;
+  output: AudioFormatSnapshot;
+  requested_exclusive: boolean;
+  requested_bit_perfect: boolean;
+  resampling: boolean;
+  volume_applied: boolean;
+  active_transforms: string[];
+  underruns: number;
+  strict_bit_perfect?: boolean;
+  strict_failure_reasons?: string[];
+  fallback_reason?: string | null;
+}
+
+export interface SignalPathStage {
+  stage_id: string;
+  title: string;
+  subtitle: string;
+  status: 'bit-perfect' | 'lossless' | 'enhanced' | 'resampled' | 'bypassed' | string;
+  details: [string, string][];
+}
+
+export interface SignalPathReport {
+  overall_fidelity: 'Bit-Perfect' | 'Lossless' | 'Enhanced' | 'Resampled' | 'Downsampled' | string;
+  color_tone: 'cyan' | 'green' | 'purple' | 'amber' | string;
+  stages: SignalPathStage[];
+}
+
+export interface PlaybackState {
+  status: 'Playing' | 'Paused' | 'Stopped';
+  current_track: string | null;
+  position_secs: number;
+  volume: number;
+  exclusive: boolean;
+  bit_perfect: boolean;
+  bit_perfect_verified?: boolean;
+  dev_rate: number;
+  driver_type: 'WASAPI' | 'ASIO';
+  last_skip_time?: number;
+  last_seek_time?: number;
+  last_stop_time?: number;
+  last_played_track?: string | null;
+  last_poll_time?: number;
+  backend_stop_detected_at?: number;
+  file_rate?: number;
+  file_ch?: number;
+  file_format?: string | null;
+  is_buffering?: boolean;
+  backend_position_secs?: number;
+  effective_audio_path?: EffectiveAudioPath | null;
+  signal_path?: SignalPathReport | any;
+  attempt_id?: string;
+}
+
+export interface CustomPromptState {
+  open: boolean;
+  title: string;
+  placeholder: string;
+  initialValue?: string;
+  actionLabel: string;
+  onSubmit: (val: string) => void;
+}
+
+export interface NetworkTelemetry {
+  session_downloaded_bytes: number;
+  current_download_rate_bps: number;
+  latency_ms: number;
+  active_stream_buffered_bytes: number;
+  active_stream_total_bytes: number;
+}
+
+export type ViewMode = 'library' | 'albums' | 'nowplaying' | 'lastfm' | 'listenbrainz' | 'aideo' | 'settings' | 'aideo_lab' | 'fullscreen' | 'loved_streams' | 'insights' | 'charts' | 'downloaded';
+
+export type SidebarNavItemId = 
+  | 'aideo'
+  | 'charts'
+  | 'library'
+  | 'nowplaying'
+  | 'loved_streams'
+  | 'downloaded'
+  | 'aideo_lab'
+  | 'insights'
+  | 'lastfm'
+  | 'listenbrainz';
+
+export interface SidebarNavItemConfig {
+  id: SidebarNavItemId;
+  label: string;
+  visible: boolean;
+  requiresHybrid?: boolean;
+  requiresAuth?: 'lastfm' | 'listenbrainz';
+}
+
+export type VisualizerMode = 'bars' | 'mirror' | 'wave' | 'circle' | 'dots' | 'baseline';
+export type VisualizerDecayRate = 'snappy' | 'balanced' | 'silky';
+
+export interface PlaybackRecovery {
+  track: Track;
+  position: number;
+  error: string;
+  action: 'retry' | 'reconnect' | 'output' | 'library';
+  pending: boolean;
+}
+export interface LibraryActions {
+  fetchLibraryPage: (offset: number, limit: number, search?: string, sortBy?: string) => Promise<{ tracks: Track[]; total: number; offset: number; limit: number }>;
+  fetchLibraryCount: (search?: string) => Promise<number>;
+}
+
+export interface PlayerState {
+  view: ViewMode;
+  networkTelemetry: NetworkTelemetry | null;
+  tracks: Track[];
+  queue: Track[];
+  currentTrackIndex: number;
+  currentTrack: Track | null;
+  shuffle: boolean;
+  repeat: 'none' | 'all' | 'one';
+  playHistory: Track[];
+  playCounts: Record<string, number>;
+  playback: PlaybackState;
+  currentAttemptId?: string;
+  isMuted: boolean;
+  mutedPrevVolume: number;
+  lyrics: LyricLine[];
+  lyricOffset: number;
+  lyricStatus: 'idle' | 'loading' | 'found' | 'not_found';
+  lyricsDisplayMode: LyricsDisplayMode;
+  coverArt: string | null;
+  accentColor: string;
+  showProMode: boolean;
+  showControlCenter: boolean;
+  showSettings: boolean;
+  showQueue: boolean;
+  visualizerMode: VisualizerMode;
+  visualizerDecayRate: VisualizerDecayRate;
+  visualizerExpanded: boolean;
+  setVisualizerMode: (mode: VisualizerMode) => void;
+  setVisualizerDecayRate: (decay: VisualizerDecayRate) => void;
+  setVisualizerExpanded: (expanded: boolean) => void;
+  dsp: DSPState;
+  streamingQuality: StreamingQuality;
+  preferredSource: PlaybackSource['provider'] | 'auto';
+  setPreferredSource: (source: PlaybackSource['provider'] | 'auto') => void;
+  sourceQueueManaged: boolean;
+  sourceRegistry: Record<string, RecordingSources>;
+  registerDiscoveredSources: (sources: RecordingSources | PlaybackSource[], recordingId?: string) => void;
+  setStreamingQuality: (quality: StreamingQuality) => void;
+  devices: string[];
+  currentDevice: string | null;
+  audioDeviceSwitching: boolean;
+  requestedAudioModes: { exclusive: boolean; bitPerfect: boolean };
+  activeAutoEq: import('../utils/deviceProfiles').AutoEqIdentity | null;
+  setActiveAutoEq: (identity: import('../utils/deviceProfiles').AutoEqIdentity | null) => void;
+  autoEqStrength: number;
+  setAutoEqStrength: (strength: number) => void;
+  applyAutoEqPreset: (preset: import('../utils/autoEqCatalog').AutoEqPreset, strength?: number) => Promise<void>;
+  disableAutoEq: () => Promise<void>;
+  setAudioOutputPath: (mode: 'shared' | 'exclusive' | 'bitperfect') => Promise<void>;
+  exclusiveMode: boolean;
+  bitPerfectMode: boolean;
+  scanDirs: string[];
+  scanStatus: string;
+  librarySearchQuery: string;
+  setLibrarySearchQuery: (query: string) => void;
+  setSearch?: (query: string) => void;
+  fetchLibraryPage: (offset: number, limit: number, search?: string, sortBy?: string) => Promise<{ tracks: Track[]; total: number; offset: number; limit: number }>;
+  fetchLibraryCount: (search?: string) => Promise<number>;
+  isTranslating: boolean;
+  showRomaji: boolean;
+  showTranslation: boolean;
+  showLyricsHeader: boolean;
+  scrobbleEnabled: boolean;
+  lastfmSessionKey: string | null;
+  tidalConnected: boolean;
+  tidalSearching: boolean;
+  tidalSearchResults: Track[];
+  pendingSettingsTab: string | null;
+  checkTidalStatus: () => Promise<void>;
+  searchTidal: (query: string) => Promise<void>;
+  playTidalResult: (track: Track) => Promise<void>;
+  downloadTidalTrack: (track: Track) => Promise<void>;
+
+  // Qobuz Streaming (Experimental)
+  qobuzExperimentalEnabled: boolean;
+  toggleQobuzExperimental: () => void;
+  qobuzConnected: boolean;
+  qobuzSearching: boolean;
+  qobuzSearchResults: Track[];
+  checkQobuzStatus: () => Promise<void>;
+  openQobuzLoginWindow: () => Promise<void>;
+  searchQobuz: (query: string) => Promise<void>;
+  playQobuzResult: (track: Track) => Promise<void>;
+  downloadQobuzTrack: (track: Track) => Promise<void>;
+  lastfmToken: string | null;
+  scrobbledCurrent: boolean;
+  lastScrobble: { artist: string; track: string } | null;
+  scrobbleThreshold: number;
+  playlists: Playlist[];
+  currentPlaylist: Playlist | null;
+  playbackError: string | null;
+  playbackRecovery: PlaybackRecovery | null;
+  reportPlaybackFailure: (error: string, track?: Track, position?: number) => void;
+  retryPlaybackRecovery: () => Promise<void>;
+  dismissPlaybackRecovery: () => void;
+  playbackSuccess: string | null;
+  customPrompt: CustomPromptState;
+  coverArtModalTrack: Track | null;
+  currentHistoryId: number | null;
+  autoplayEnabled: boolean;
+  autoplayDiscoveryLevel: 'familiarity' | 'balanced' | 'discovery';
+  recommendationEngine: 'our' | 'youtube' | 'tidal';
+  autoplaySeedTrack: Track | null;
+  autoplaySessionHistory: Track[];
+  recentlyClearedAutoplayPaths: string[];
+  appMode: 'local' | 'hybrid';
+  onboardingCompleted: boolean;
+  showOnboarding: boolean;
+
+  // Chromecast State
+  chromecast_devices: { name: string; ip: string; port: number }[];
+  chromecast_active_device: string | null;
+  chromecast_scanning: boolean;
+  chromecast_connected: boolean;
+
+  // Lossless UPnP / DLNA State
+  upnp_devices: UpnpDevice[];
+  upnp_active_device: string | null;
+  upnp_scanning: boolean;
+  upnp_connected: boolean;
+
+  // Tag Editor State
+  tagEditorTrack: Track | null;
+  tagEditorBatchTracks: Track[];
+
+  // Desktop Lyrics State
+  desktopLyricsOpen: boolean;
+  desktopLyricsLocked: boolean;
+
+  playlistModalTrack: Track | null;
+
+  // actions
+  setCustomPrompt: (prompt: Partial<CustomPromptState>) => void;
+  setCoverArtModalTrack: (track: Track | null) => void;
+  setPlaylistModalTrack: (track: Track | null) => void;
+  setTagEditorTrack: (track: Track | null) => void;
+  setTagEditorBatchTracks: (tracks: Track[]) => void;
+  toggleDesktopLyrics: () => Promise<void>;
+  toggleDesktopLyricsLocked: () => Promise<void>;
+  discoverUpnpDevices: () => Promise<void>;
+  connectUpnpDevice: (device: UpnpDevice) => Promise<void>;
+  disconnectUpnpDevice: () => Promise<void>;
+  setPlaybackError: (err: string | null) => void;
+  setPlaybackSuccess: (msg: string | null) => void;
+  setView: (view: ViewMode) => void;
+  setAppMode: (mode: 'local' | 'hybrid') => void;
+  setOnboardingCompleted: (completed: boolean) => void;
+  setShowOnboarding: (show: boolean) => void;
+  updateDiscordPresence: () => void;
+  addScanDir: (dir: string) => void;
+  removeScanDir: (dir: string) => void;
+  setScrobbleThreshold: (val: number) => void;
+  toggleSettings: () => void;
+  toggleQueue: () => void;
+  toggleScrobble: () => void;
+  keepAwake: boolean;
+  toggleKeepAwake: () => Promise<void>;
+  discordEnabled: boolean;
+  toggleDiscord: () => void;
+  lowSpecMode: boolean;
+  toggleLowSpecMode: () => void;
+  sidebarCollapsed: boolean;
+  toggleSidebarCollapsed: () => void;
+  sidebarNavItems: SidebarNavItemConfig[];
+  setSidebarNavItems: (items: SidebarNavItemConfig[]) => void;
+  toggleSidebarNavItemVisibility: (id: SidebarNavItemId) => void;
+  moveSidebarNavItem: (index: number, direction: 'up' | 'down') => void;
+  resetSidebarNavItems: () => void;
+  sidebarLastfmVisible: boolean;
+  sidebarListenbrainzVisible: boolean;
+  toggleSidebarLastfmVisible: () => void;
+  toggleSidebarListenbrainzVisible: () => void;
+  liquidBackgroundEnabled: boolean;
+  toggleLiquidBackground: () => void;
+  showSmartMixWidget: boolean;
+  toggleSmartMixWidget: () => void;
+  setLastFmSession: (key: string | null) => void;
+  setShowRomaji: (val: boolean) => void;
+  setShowTranslation: (val: boolean) => void;
+  setShowLyricsHeader: (val: boolean) => void;
+  toggleLyricsHeader: () => void;
+  scanLibrary: () => Promise<void>;
+  loadLibrary: () => Promise<void>;
+  deleteTrack: (path: string) => Promise<void>;
+  recordPlaybackTransition: (newTrack: Track | null, playbackSource?: string) => Promise<void>;
+  playTrack: (track: Track, isHistory?: boolean, forceResetAutoplay?: boolean, playbackSource?: string, startPos?: number, preservePlaybackSession?: boolean) => Promise<void>;
+  playDynamicMix: (mixType: 'supermix' | 'recap' | 'discovery' | 'chill') => Promise<void>;
+  addToQueue: (track: Track) => Promise<boolean | void>;
+  playNextInQueue: (track: Track) => Promise<boolean | void>;
+  playFromQueue: (index: number) => Promise<void>;
+  removeFromQueue: (index: number) => Promise<void>;
+  clearQueue: () => Promise<void>;
+  reorderQueue: (from: number, to: number) => Promise<void>;
+  initializeQueue: () => Promise<void>;
+  fetchQueue: () => Promise<void>;
+  syncBackendQueue: () => Promise<void>;
+  handleTrackTransition: (path: string) => Promise<void>;
+  handleNativeTrackTransition: (path: string, attemptId: string) => Promise<void>;
+  albumSession: { title: string; tracks: Track[]; index: number } | null;
+  stopBoundary: { kind: 'track' | 'album'; path: string } | null;
+  playAlbumToEnd: (tracks: Track[], title: string) => Promise<void>;
+  cancelAlbumSession: () => Promise<void>;
+  armStopAfter: (kind: 'track' | 'album') => Promise<void>;
+  cancelStopAfter: () => Promise<void>;
+  fulfillStopBoundary: () => Promise<void>;
+  handleNaturalTrackEnd: () => Promise<void>;
+  playNext: () => Promise<void>;
+  getNextTrackToPlay: () => Track | null;
+  getNextTracksToPlay: (count?: number) => Track[];
+  preCacheNextTracks: () => Promise<void>;
+  playPrev: () => Promise<void>;
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
+  toggleAutoplay: () => Promise<void>;
+  setAutoplayDiscoveryLevel: (level: 'familiarity' | 'balanced' | 'discovery') => void;
+  setRecommendationEngine: (engine: 'our' | 'youtube' | 'tidal') => void;
+  triggerAutoplayRadio: (track: Track, forceReset?: boolean) => Promise<void>;
+  pauseTrack: () => Promise<void>;
+  resumeTrack: () => Promise<void>;
+  resumeLastSession: () => Promise<boolean>;
+  resumePosition: number;
+  dismissResumePrompt: () => void;
+  stopTrack: () => Promise<void>;
+  setVolume: (vol: number) => Promise<void>;
+  toggleMute: () => Promise<void>;
+  seek: (secs: number) => Promise<void>;
+  pollStatus: () => Promise<void>;
+  toggleProMode: () => void;
+  toggleControlCenter: () => void;
+  resetProMode: () => void;
+  setDSP: (dsp: Partial<DSPState>) => Promise<void>;
+  toggleDspAB: () => Promise<void>;
+  toggleExclusive: (enable?: boolean | unknown) => Promise<void>;
+  toggleBitPerfect: (enable?: boolean | unknown) => Promise<void>;
+  restoreAudioModes: () => Promise<void>;
+  fetchDevices: () => Promise<void>;
+  setAudioDevice: (name: string, options?: { backendSelected?: boolean; fallback?: boolean }) => Promise<void>;
+  playbackRate: number;
+  setPlaybackRate: (rate: number) => Promise<void>;
+  adjustLyricOffset: (ms: number) => void;
+  setLyricOffset: (ms: number) => void;
+  setLyricsDisplayMode: (mode: LyricsDisplayMode) => void;
+  saveLyrics: (path: string, lrc: string) => Promise<void>;
+  autoFetchLyricsOnline: (track: Track) => Promise<void>;
+  translateLyrics: () => Promise<void>;
+  getRomaji: () => Promise<void>;
+  applyOnlineCover: (path: string, url: string) => Promise<void>;
+  fetchPlaylists: () => Promise<void>;
+  createPlaylist: (name: string) => Promise<void>;
+  deletePlaylist: (id: number) => Promise<void>;
+  smartPlaylists: any[];
+  fetchSmartPlaylists: () => Promise<void>;
+  createSmartPlaylist: (name: string, rules: any) => Promise<number | undefined>;
+  deleteSmartPlaylist: (id: number) => Promise<void>;
+  addToPlaylist: (playlistId: number, track: string | Track) => Promise<void>;
+  removeFromPlaylist: (playlistId: number, track: string | Track) => Promise<void>;
+  reorderPlaylistTracks: (playlistId: number, fromIndex: number, toIndex: number) => Promise<void>;
+  loadPlaylistTracks: (playlistId: number) => Promise<void>;
+  toggleLoveTrack: (path: string, metadata?: Partial<Track>) => Promise<boolean | void>;
+  toggleDislikeTrack: (path: string, metadata?: Partial<Track>) => Promise<void>;
+  setRecommendationInterest: (track: Track, interested: boolean) => Promise<void>;
+  resetDislikedTracks: () => Promise<void>;
+  cachedCloudHashes: string[];
+  fetchCachedCloudHashes: () => Promise<void>;
+  cacheCloudTrack: (track: any) => Promise<void>;
+  deleteCachedTrack: (streamUrl: string) => Promise<void>;
+  generateSmartMix: (mood: string, trendSource: string) => Promise<void>;
+  setDriverType: (type: 'WASAPI' | 'ASIO') => void;
+  playStream: (url: string, metadata?: { title?: string; artist?: string; duration?: number; cover_url?: string | null }, triggerAutoplay?: boolean) => Promise<void>;
+  fetchLastfmDashboard: () => Promise<void>;
+  matchMetadata: (track: Track) => Promise<any>;
+  lastfmUser: any | null;
+  lastfmRecent: any[];
+  lastfmTopArtists: any[];
+  listenbrainzToken: string | null;
+  listenbrainzUsername: string | null;
+  listenbrainzEnabled: boolean;
+  listenbrainzRecent: any[];
+  listenbrainzRecs: any[];
+  listenbrainzListenCount: number | null;
+  setListenbrainzToken: (token: string | null) => void;
+  validateAndSetListenbrainzToken: (token: string) => Promise<boolean>;
+  toggleListenbrainzScrobble: () => void;
+  fetchListenbrainzDashboard: () => Promise<void>;
+
+
+
+  // Cloud Connections State
+  subsonicUrl: string;
+  subsonicUser: string;
+  subsonicPass: string;
+  subsonicConnected: boolean;
+  subsonicLoading: boolean;
+  jellyfinUrl: string;
+  jellyfinConnected: boolean;
+  jellyfinLoading: boolean;
+
+  // Cloud Connections Actions
+  connectSubsonic: (url: string, user: string, pass: string) => Promise<boolean>;
+  disconnectSubsonic: () => void;
+  loadSubsonicPassword: () => Promise<void>;
+  connectJellyfin: (url: string, apiKey: string) => Promise<boolean>;
+  disconnectJellyfin: () => void;
+  batchDownloadProgress: BatchDownloadProgress | null;
+  downloadBatchPlaylist: (items: BatchDownloadItem[], playlistName?: string) => Promise<number>;
+
+  // Notification Preferences
+  notificationsEnabled: boolean;
+  developerNotifications: boolean;
+  osTrackNotificationsEnabled: boolean;
+  osNotifyBackgroundOnly: boolean;
+  toggleNotificationsEnabled: () => void;
+  toggleDeveloperNotifications: () => void;
+  toggleOsTrackNotifications: () => void;
+  toggleOsNotifyBackgroundOnly: () => void;
+
+  // Discovery Hub State
+  discoveryData: DiscoveryHubData | null;
+  isLoadingRecs: boolean;
+  activeDiscoveryTab: string;
+  discoveryLayout: 'shelves' | 'unified';
+  discoveryCardSize: number;
+  discoveryViewMode: 'grid' | 'list';
+  setDiscoveryData: (data: DiscoveryHubData | null) => void;
+  setIsLoadingRecs: (loading: boolean) => void;
+  setActiveDiscoveryTab: (tab: string) => void;
+  setDiscoveryLayout: (layout: 'shelves' | 'unified') => void;
+  setDiscoveryCardSize: (size: number) => void;
+  setDiscoveryViewMode: (mode: 'grid' | 'list') => void;
+  cacheSizeLimit: number;
+  setCacheSizeLimit: (limit: number) => void;
+
+  // Auth & Cloud Sync State
+  supabaseUrl: string;
+  supabaseKey: string;
+  user: any | null;
+  session: any | null;
+  authLoading: boolean;
+  syncing: boolean;
+  setSupabaseCredentials: (url: string, key: string) => void;
+  signIn: (email: string, pass: string) => Promise<boolean>;
+  signUp: (email: string, pass: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
+  checkSession: () => Promise<void>;
+  signInWithOAuth: (provider: 'google' | 'github') => Promise<void>;
+  syncToCloud: () => Promise<void>;
+  syncFromCloud: (options?: {
+    likedTracks?: boolean;
+    playlists?: boolean;
+    settings?: boolean;
+    playCounts?: boolean;
+  }) => Promise<void>;
+
+  // Chromecast Actions
+  discoverCastDevices: () => Promise<void>;
+  connectCastDevice: (device: { name: string; ip: string; port: number }) => Promise<void>;
+  disconnectCastDevice: () => Promise<void>;
+
+  // Mini Player
+  miniPlayerMode: boolean;
+  setMiniPlayerMode: (mini: boolean) => Promise<void>;
+
+  // Keyboard Shortcuts
+  shortcuts: Record<string, string>;
+  setShortcut: (action: string, binding: string) => void;
+
+  // Global Hotkeys (work when app is not focused)
+  globalHotkeys: Record<string, string | null>;
+  setGlobalHotkey: (action: string, binding: string | null) => void;
+  initGlobalHotkeys: () => void;
+
+  // Sleep Timer
+  sleepTimer: { duration: number; remaining: number; active: boolean };
+  startSleepTimer: (duration: number) => void;
+  stopSleepTimer: () => void;
+
+  // Color Scheme Theme Mode
+  colorScheme: 'dark' | 'light' | 'system';
+  setColorScheme: (mode: 'dark' | 'light' | 'system') => void;
+
+  // Album Art Fit Mode
+  albumArtFit: 'cover' | 'contain';
+  setAlbumArtFit: (fit: 'cover' | 'contain') => void;
+
+  // Player Bar Design Layout
+  playerBarDesign: PlayerBarDesign;
+  setPlayerBarDesign: (design: PlayerBarDesign) => void;
+
+  // Aideo Page Design Layout
+  aideoPageDesign: AideoPageDesign;
+  setAideoPageDesign: (design: AideoPageDesign) => void;
+
+  // Theater / Fullscreen Mode Design Layout
+  theaterModeDesign: TheaterModeDesign;
+  setTheaterModeDesign: (design: TheaterModeDesign) => void;
+
+  // Theater Mode Floating Playback HUD Style
+  theaterHudStyle: TheaterHudStyle;
+  setTheaterHudStyle: (style: TheaterHudStyle) => void;
+
+  // Library Page Design Layout
+  libraryDesign: LibraryDesign;
+  setLibraryDesign: (design: LibraryDesign) => void;
+
+  // Album Page View Mode
+  albumViewMode: AlbumViewMode;
+  setAlbumViewMode: (mode: AlbumViewMode) => void;
+
+  // Player Bar Transparency (Glassmorphism)
+  playerBarTransparent: boolean;
+  setPlayerBarTransparent: (transparent: boolean) => void;
+  togglePlayerBarTransparent: () => void;
+
+  // Animated Video Canvas (Motion Artwork)
+  canvasEnabled: boolean;
+  canvasMode: CanvasMode;
+  canvasAllowOnline: boolean;
+  currentCanvas: CanvasResult | null;
+  setCanvasEnabled: (enabled: boolean) => void;
+  toggleCanvasEnabled: () => void;
+  setCanvasMode: (mode: CanvasMode) => void;
+  cycleCanvasMode: () => void;
+  setCanvasAllowOnline: (allow: boolean) => void;
+  setCurrentCanvas: (canvas: CanvasResult | null) => void;
+}
+
+export type PlayerBarDesign = 'classic' | 'floating' | 'waveform' | 'minimal' | 'vinyl';
+export type AideoPageDesign = 'classic' | 'editorial' | 'command' | 'stage' | 'spotify' | 'apple';
+export type LibraryDesign = 'classic' | 'studio' | 'editorial' | 'crate' | 'ambient' | 'brutalist';
+export type AlbumViewMode = 'classic' | 'compact' | 'editorial';
+export type TheaterModeDesign = 'stage' | 'zen' | 'studio' | 'vinyl' | 'poster' | 'scope';
+export type TheaterHudStyle = 'capsule' | 'master' | 'minimal' | 'analog';
+export type CanvasMode = 'off' | 'artwork' | 'backdrop' | 'both';
+
+export interface CanvasResult {
+  url: string;
+  fallback_url?: string | null;
+  source: 'local' | 'tidal' | 'apple' | string;
+  format: 'mp4' | 'hls' | string;
+  is_local: boolean;
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+}
+
+// Design ids that existed before the 2026 home redesign. Stored values from
+// these are migrated to 'classic' on load.
+export const LEGACY_AIDEO_PAGE_DESIGNS = ['bento', 'audiophile', 'cinematic'] as const;
+
+export { extractAccentColor as extractDominantColor } from '../utils/colorExtractor';
+
+export interface TopSong {
+  title: string;
+  artist: string;
+  track_path: string;
+  play_count: number;
+}
+
+export interface TopArtist {
+  artist: string;
+  play_count: number;
+}
+
+export interface TopAlbum {
+  album: string;
+  artist: string;
+  cover_url?: string | null;
+  play_count: number;
+}
+
+export interface TopGenre {
+  genre: string;
+  play_count: number;
+}
+
+export interface HourActivity {
+  hour: number;
+  play_count: number;
+}
+
+export interface DayActivity {
+  day: number;
+  play_count: number;
+}
+
+export interface AudiophileStats {
+  lossless_count: number;
+  hi_res_count: number;
+  bit_perfect_count: number;
+  total_analyzed: number;
+  avg_sample_rate: number;
+}
+
+export interface SourceDistribution {
+  source: string;
+  play_count: number;
+}
+
+export interface ListeningInsightsPayload {
+  total_listening_time_secs: number;
+  total_plays: number;
+  skip_count: number;
+  skip_rate: number;
+  top_songs: TopSong[];
+  top_artists: TopArtist[];
+  top_albums: TopAlbum[];
+  top_genres: TopGenre[];
+  hourly_activity: HourActivity[];
+  daily_activity: DayActivity[];
+  audiophile_stats: AudiophileStats;
+  source_distribution: SourceDistribution[];
+}

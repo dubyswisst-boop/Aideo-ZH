@@ -1,0 +1,1315 @@
+import { markListeningEnd } from './utils/recommendations';
+import { handleSourceFailure } from './store/sourcePlayback';
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { useStore, Track } from './store';
+import { useUpdaterStore } from './store/updaterStore';
+import { useShallow } from 'zustand/react/shallow';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { Radio, Download, X } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import './App.css';
+
+import { Sidebar } from './components/Sidebar';
+import { LibraryView } from './components/LibraryView';
+import { NowPlayingView } from './components/NowPlayingView';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ViewSkeleton } from './components/ViewSkeleton';
+
+const AideoView = lazy(() => import('./components/AideoView').then(m => ({ default: m.AideoView })));
+const LastfmView = lazy(() => import('./components/LastfmView').then(m => ({ default: m.LastfmView })));
+const ListenbrainzView = lazy(() => import('./components/ListenbrainzView').then(m => ({ default: m.ListenbrainzView })));
+const SettingsView = lazy(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView })));
+const AideoLabView = lazy(() => import('./components/AideoLabView').then(m => ({ default: m.AideoLabView })));
+const FullscreenView = lazy(() => import('./components/FullscreenView').then(m => ({ default: m.FullscreenView })));
+const ListeningInsightsView = lazy(() => import('./components/ListeningInsightsView').then(m => ({ default: m.ListeningInsightsView })));
+const AlbumsView = lazy(() => import('./components/AlbumsView').then(m => ({ default: m.AlbumsView })));
+const ChartsView = lazy(() => import('./components/ChartsView').then(m => ({ default: m.ChartsView })));
+const DownloadedView = lazy(() => import('./components/DownloadedView').then(m => ({ default: m.DownloadedView })));
+
+import { PlaybackRecovery } from './components/PlaybackRecovery';
+import { PlayerBar } from './components/PlayerBar';
+import { ScrollToTopButton } from './components/ScrollToTopButton';
+import { AudioControlCenter } from './components/AudioControlCenter';
+import { AideoPrompt } from './components/AideoPrompt';
+import { ToastContainer } from './components/Toast';
+import { DownloadManager } from './components/DownloadManager';
+import { QueueView } from './components/QueueView';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { handlePlayerShortcut } from './utils/playerShortcuts';
+import { isStreamTrack, trackIdToStreamUrl } from './utils';
+import { CoverArtModal } from './components/CoverArtModal';
+import { TagEditorModal } from './components/TagEditorModal';
+import { AddToPlaylistModal } from './components/AddToPlaylistModal';
+import { DesktopLyricBar } from './components/DesktopLyricBar';
+import { BrowserCallbackLanding } from './components/BrowserCallbackLanding';
+import { OauthChildCallback } from './components/OauthChildCallback';
+import { MiniPlayer } from './components/MiniPlayer';
+import { DebugLogsModal } from './components/DebugLogsModal';
+import { logger } from './utils/logger';
+import { stripAideoDeepLinkScheme } from './utils/deepLinkScheme';
+
+// Global Error & Unhandled Rejection Capture
+if (typeof window !== 'undefined') {
+  window.onerror = (msg, url, line, col, error) => {
+    logger.crash(
+      `[Global JS Error] ${msg} at ${url || 'unknown'}:${line}:${col}`,
+      error || new Error(String(msg)),
+      undefined,
+      { url, line, col }
+    ).catch(() => {});
+    return false;
+  };
+  window.onunhandledrejection = (event) => {
+    const reason = event.reason;
+    const msg = reason instanceof Error ? reason.message : String(reason || 'Unknown Rejection');
+    logger.error('PROMISE', `[Unhandled Promise Rejection] ${msg}`, reason).catch(() => {});
+  };
+}
+
+const handleDeepLink = (rawUrl: string) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return;
+  const cleanUrl = rawUrl.trim();
+  const withoutScheme = stripAideoDeepLinkScheme(cleanUrl);
+  if (withoutScheme === null) return;
+
+  try {
+    const [pathPart, queryPart] = withoutScheme.split('?');
+    const action = (pathPart.split('/')[0] || '').toLowerCase();
+    const subRoute = pathPart.split('/').slice(1).join('/');
+    const params = new URLSearchParams(queryPart || '');
+
+    if (action === 'play') {
+      const pathParam = params.get('path');
+      if (pathParam) {
+        const decodedPath = decodeURIComponent(pathParam);
+        const state = useStore.getState();
+        const existing = state.tracks.find(t => t.path === decodedPath);
+        if (existing) {
+          void state.playTrack(existing);
+        } else {
+          invoke('play_track', { path: decodedPath, startPos: 0.0, attemptId: null })
+            .catch(err => console.error('[DeepLink] Play error:', err));
+        }
+      }
+    } else if (action === 'queue') {
+      const pathParam = params.get('path');
+      if (pathParam) {
+        const decodedPath = decodeURIComponent(pathParam);
+        const state = useStore.getState();
+        const existing = state.tracks.find(t => t.path === decodedPath);
+        const trackToQueue: Track = existing || {
+          id: 0,
+          path: decodedPath,
+          title: decodedPath.split(/[\/\\]/).pop()?.replace(/\.[^/.]+$/, '') || 'Unknown Track',
+          artist: 'Unknown Artist',
+          album: 'Unknown Album',
+          duration: 0,
+          format: decodedPath.split('.').pop() || 'Unknown',
+          cover_url: null,
+          lyric_offset: 0,
+        };
+        void state.addToQueue(trackToQueue);
+        window.dispatchEvent(new CustomEvent('ui-toast', {
+          detail: { message: `Added to queue: ${trackToQueue.title || decodedPath}`, type: 'info' }
+        }));
+      }
+    } else if (action === 'search') {
+      const q = params.get('q');
+      if (q) {
+        const decodedQ = decodeURIComponent(q);
+        const state = useStore.getState();
+        if (state.setSearch) {
+          state.setSearch(decodedQ);
+        } else {
+          state.setLibrarySearchQuery(decodedQ);
+        }
+        state.setView('library');
+      }
+    } else if (action === 'auth') {
+      const provider = subRoute || 'service';
+      window.dispatchEvent(new CustomEvent('ui-toast', {
+        detail: { message: `Received authentication callback for ${provider}`, type: 'info' }
+      }));
+      window.dispatchEvent(new CustomEvent('oauth-callback-url', {
+        detail: cleanUrl
+      }));
+    }
+  } catch (err) {
+    console.error('[DeepLink] Error handling deep link:', cleanUrl, err);
+  }
+};
+
+function AideoApp() {
+  const { 
+    view, 
+    pollStatus, 
+    loadLibrary, 
+    lastScrobble, 
+    fetchPlaylists, 
+    customPrompt, 
+    setCustomPrompt, 
+    lowSpecMode,
+    onboardingCompleted,
+    showOnboarding,
+    sidebarCollapsed,
+    miniPlayerMode,
+    colorScheme,
+    coverArtModalTrack,
+    playlistModalTrack,
+    tagEditorTrack,
+    tagEditorBatchTracks,
+    playerBarDesign,
+    playerBarTransparent,
+    accentColor
+  } = useStore(useShallow(s => ({
+    view: s.view,
+    pollStatus: s.pollStatus,
+    loadLibrary: s.loadLibrary,
+    lastScrobble: s.lastScrobble,
+    fetchPlaylists: s.fetchPlaylists,
+    customPrompt: s.customPrompt,
+    setCustomPrompt: s.setCustomPrompt,
+    lowSpecMode: s.lowSpecMode,
+    onboardingCompleted: s.onboardingCompleted,
+    showOnboarding: s.showOnboarding,
+    sidebarCollapsed: s.sidebarCollapsed,
+    miniPlayerMode: s.miniPlayerMode,
+    colorScheme: s.colorScheme,
+    coverArtModalTrack: s.coverArtModalTrack,
+    playlistModalTrack: s.playlistModalTrack,
+    tagEditorTrack: s.tagEditorTrack,
+    tagEditorBatchTracks: s.tagEditorBatchTracks,
+    playerBarDesign: s.playerBarDesign,
+    playerBarTransparent: s.playerBarTransparent,
+    accentColor: s.accentColor,
+  })));
+  const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);
+  const [showDebugLogs, setShowDebugLogs] = useState(false);
+  const [visitedViews, setVisitedViews] = useState<Set<string>>(() => new Set(['aideo', 'library']));
+
+  useEffect(() => {
+    if (view && (view === 'albums' || view === 'settings')) {
+      setVisitedViews(prev => {
+        if (prev.has(view)) return prev;
+        const next = new Set(prev);
+        next.add(view);
+        return next;
+      });
+    }
+  }, [view]);
+
+  useEffect(() => {
+    logger.addBreadcrumb('NAV', `View changed to: ${view}`);
+  }, [view]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat || e.isComposing) return;
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        setShowDebugLogs(prev => !prev);
+      }
+    };
+    const handleOpenEvent = () => setShowDebugLogs(true);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-debug-logs', handleOpenEvent);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-debug-logs', handleOpenEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const listener = (e: MediaQueryListEvent) => setSystemIsLight(e.matches);
+    mediaQuery.addEventListener('change', listener);
+    return () => mediaQuery.removeEventListener('change', listener);
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const s = useStore.getState();
+      const historyId = s.currentHistoryId;
+      if (historyId !== null) {
+        const currentPos = s.playback.position_secs;
+        const duration = s.currentTrack?.duration || 0;
+        const skipped = duration > 0 ? (currentPos < 30.0 && currentPos < duration * 0.5) : false;
+        const completionRate = duration > 0 ? Math.min(1.0, Math.max(0.0, currentPos / duration)) : null;
+        invoke('log_playback_end', {
+          historyId,
+          durationPlayed: currentPos,
+          skipped,
+          completionRate,
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  const isLightTheme = colorScheme === 'light' || (colorScheme === 'system' && systemIsLight);
+
+  useEffect(() => {
+    if (isLightTheme) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.classList.add('light-theme');
+      document.documentElement.style.colorScheme = 'light';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.remove('light-theme');
+      document.documentElement.style.colorScheme = 'dark';
+    }
+  }, [isLightTheme]);
+
+  const {
+    status: updaterStatus,
+    update: updateInfo,
+    error: updateError,
+    downloadProgress,
+    modalOpen: updateModalOpen,
+    checkForUpdates,
+    installUpdate,
+    dismissModal,
+  } = useUpdaterStore();
+
+  useEffect(() => {
+    const { fetchDevices, initializeQueue, loadSubsonicPassword, checkSession, checkTidalStatus } = useStore.getState();
+    loadLibrary();
+    fetchPlaylists();
+    fetchDevices();
+    initializeQueue();
+    loadSubsonicPassword();
+    checkSession().catch(e => console.error("checkSession error:", e));
+    // Restore Tidal session flag from backend keyring so tidalConnected is
+    // correct immediately after a webview reload, without visiting Settings.
+    checkTidalStatus();
+
+    // Synchronize Windows Keep Awake status with backend on startup
+    const initialKeepAwake = localStorage.getItem('aideo_keep_awake') === 'true';
+    if (initialKeepAwake) {
+      invoke('toggle_keep_awake', { enable: true }).catch(e => console.error("toggle_keep_awake error:", e));
+    }
+
+    useStore.getState().restoreAudioModes()
+      .catch(e => console.error('restoreAudioModes error:', e));
+    // Synchronize close to tray setting with backend on startup
+    const initialCloseToTray = localStorage.getItem('aideo_close_to_tray') === 'true';
+    if (initialCloseToTray) {
+      invoke('set_close_to_tray', { enabled: true }).catch(e => console.error("set_close_to_tray error:", e));
+    }
+
+    // Synchronize Discord RPC setting with backend on startup
+    const initialDiscordEnabled = localStorage.getItem('aideo_discord_enabled') !== 'false';
+    invoke('set_discord_enabled', { enabled: initialDiscordEnabled }).catch(e => console.error("set_discord_enabled on startup error:", e));
+
+    // Restore user-configured global hotkeys (works when app is minimized)
+    useStore.getState().initGlobalHotkeys();
+
+    // Ensure window is always centered and safely on-screen on startup
+    invoke('center_window').catch(() => {});
+
+    // Push initial track metadata to Aideo Connect if restored from previous session
+    const initialTrack = useStore.getState().currentTrack;
+    if (initialTrack) {
+      invoke('update_media_metadata', {
+        title: initialTrack.title || initialTrack.path.split(/[\\/]/).pop(),
+        artist: initialTrack.artist || 'Unknown Artist',
+        album: initialTrack.album || '',
+        coverUrl: initialTrack.cover_url || useStore.getState().coverArt || null,
+        duration: initialTrack.duration || 0,
+      }).catch(() => {});
+    }
+
+    // Async background setup for yt-dlp audio decoder
+    invoke('check_and_download_ytdlp').catch(e => console.error("ytdlp download error:", e));
+
+    // Silent background check for updates
+    checkForUpdates().catch(e => console.error("Update check failed:", e));
+
+    // Fix #7: Use async IIFE to ensure unlisten is assigned before cleanup runs
+    let isCancelled = false;
+    let unlistenOAuth: (() => void) | undefined;
+    let unlistenOAuthCallback: (() => void) | undefined;
+
+    const setupOAuthListener = async () => {
+      const u1 = await listen<any>('oauth-success', (event) => {
+        if (isCancelled) return;
+        const session = event.payload;
+        if (session) {
+          useStore.setState({ 
+            session, 
+            user: session.user ?? null,
+            authLoading: false
+          });
+          window.dispatchEvent(new CustomEvent('ui-toast', { 
+            detail: { message: 'Signed in successfully!', type: 'success' } 
+          }));
+        }
+      });
+      if (isCancelled) {
+        u1();
+        return;
+      }
+      unlistenOAuth = u1;
+
+      const u2 = await listen<string>('oauth-callback-url', async (event) => {
+        if (isCancelled) return;
+        const url = event.payload;
+        try {
+          const hash = url.split('#')[1];
+          if (!hash) return;
+          const params = new URLSearchParams(hash);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            const { getSupabaseClient } = await import('./utils/supabaseClient');
+            const client = getSupabaseClient();
+            if (client) {
+              const { data: { session }, error } = await client.auth.setSession({ access_token, refresh_token });
+              if (error) throw error;
+              if (session) {
+                useStore.setState({
+                  session,
+                  user: session.user ?? null,
+                  authLoading: false
+                });
+                window.dispatchEvent(new CustomEvent('ui-toast', { 
+                  detail: { message: 'Signed in successfully!', type: 'success' } 
+                }));
+              }
+            }
+          }
+        } catch (e: any) {
+          console.error('Failed to resolve OAuth session from callback:', e);
+          useStore.setState({ authLoading: false });
+          window.dispatchEvent(new CustomEvent('ui-toast', { 
+            detail: { message: `OAuth callback error: ${e.message || e}`, type: 'error' } 
+          }));
+        }
+      });
+      if (isCancelled) {
+        u2();
+        return;
+      }
+      unlistenOAuthCallback = u2;
+    };
+    setupOAuthListener();
+
+    return () => {
+      isCancelled = true;
+      if (unlistenOAuth) unlistenOAuth();
+      if (unlistenOAuthCallback) unlistenOAuthCallback();
+    };
+  }, [loadLibrary, fetchPlaylists]);
+
+
+  useEffect(() => {
+    let isCancelled = false;
+    const cleanups: (() => void)[] = [];
+    let intervalId: any;
+
+    const startPolling = (ms: number) => {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(pollStatus, ms);
+    };
+
+    // Heartbeat polling (fallback safety check every 2 seconds instead of aggressive 200ms hammering)
+    startPolling(2000);
+
+    const handleVisibilityChange = () => {
+      startPolling(document.visibilityState === 'visible' ? 2000 : 5000);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Smooth high-resolution client-side playback position clock (zero IPC cost)
+    let lastClockTime = performance.now();
+    const clockInterval = setInterval(() => {
+      if (isCancelled) return;
+      const state = useStore.getState();
+      const now = performance.now();
+      const delta = (now - lastClockTime) / 1000;
+      lastClockTime = now;
+
+      if (state.playback.status === 'Playing' && !state.playback.is_buffering && delta > 0 && delta < 1.0) {
+        const duration = state.currentTrack?.duration || Infinity;
+        const currentPos = state.playback.position_secs || 0;
+        const backendPos = state.playback.backend_position_secs;
+
+        // If playing an uncached or online stream and the audio backend has not yet output any audio (backendPos === 0),
+        // pause the forward delta so the progress bar and lyrics do not run ahead while buffering/loading.
+        const isStream = state.currentTrack && isStreamTrack(state.currentTrack.path, state.currentTrack.format);
+        if (isStream && (backendPos === 0 || backendPos === undefined) && currentPos >= 0) {
+          return;
+        }
+
+        // PLL Rate Adjustment: if client clock leads hardware by > 1.2s,
+        // gently scale the forward delta so hardware catches up smoothly without visible jumps.
+        let rate = 1.0;
+        if (typeof backendPos === 'number' && currentPos > backendPos) {
+          const drift = currentPos - backendPos;
+          if (drift > 2.5) {
+            rate = 0.2;
+          } else if (drift > 1.2) {
+            rate = 0.7;
+          }
+        }
+
+        const newPos = Math.min(duration, currentPos + delta * rate);
+        useStore.setState(s => ({
+          playback: { ...s.playback, position_secs: newPos }
+        }));
+      }
+    }, 100);
+    cleanups.push(() => clearInterval(clockInterval));
+
+    const setupListeners = async () => {
+      for (const provider of ['tidal', 'qobuz']) {
+        const unlisten = await listen<{ filename: string; track_id: string; error: string }>(`${provider}-download-error`, event => {
+          if (isCancelled) return;
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: { message: `${provider === 'tidal' ? 'Tidal' : 'Qobuz'} download failed (${event.payload.filename}): ${event.payload.error}`, type: 'error' }
+          }));
+        });
+        if (isCancelled) { unlisten(); return; }
+        cleanups.push(unlisten);
+      }
+      const uScannerError = await listen<string>('scanner-error', event => {
+        if (isCancelled) return;
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: event.payload, title: 'Library Scan', type: 'error' } }));
+      });
+      if (isCancelled) { uScannerError(); return; }
+      cleanups.push(uScannerError);
+
+      const uSourceError = await listen<{ path: string; error: string; attempt_id?: string }>('source-playback-error', event => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        if (!state.currentTrack || !event.payload.attempt_id || event.payload.attempt_id !== state.currentAttemptId
+          || ((state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && event.payload.path !== state.playback.current_track)) return;
+        if (state.currentTrack.source_context) {
+          handleSourceFailure(event.payload.path, event.payload.error, event.payload.attempt_id);
+        } else {
+          trackIdToStreamUrl.clear();
+          markListeningEnd('error');
+          if (state.albumSession) state.reportPlaybackFailure(event.payload.error);
+          else state.playNext();
+        }
+      });
+      if (isCancelled) { uSourceError(); return; }
+      cleanups.push(uSourceError);
+      const uPlaybackReady = await listen<{ attempt_id?: string; path?: string }>('playback-ready', event => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const incomingAttemptId = event.payload?.attempt_id;
+        if (!state.currentTrack || !state.currentAttemptId || incomingAttemptId !== state.currentAttemptId
+          || (event.payload?.path && (state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && event.payload.path !== state.playback.current_track)) return;
+        useStore.setState(s => ({ playback: { ...s.playback, is_buffering: false } }));
+      });
+      if (isCancelled) { uPlaybackReady(); return; }
+      cleanups.push(uPlaybackReady);
+
+      const uTransitioned = await listen<{ previous_path?: string; previous_attempt_id?: string; path: string; attempt_id: string }>('track-transitioned', async (event) => {
+        if (isCancelled) return;
+        const payload = event?.payload;
+        const state = useStore.getState();
+        if (!payload?.path || !payload.attempt_id || !payload.previous_attempt_id
+          || payload.previous_attempt_id !== state.currentAttemptId
+          || (payload.previous_path && payload.previous_path !== state.playback.current_track)) return;
+        console.log('[App] Received track-transitioned event from native backend:', payload);
+        markListeningEnd('completed');
+        await state.handleNativeTrackTransition(payload.path, payload.attempt_id);
+      });
+      if (isCancelled) { uTransitioned(); return; }
+      cleanups.push(uTransitioned);
+
+      let lastHandledAttemptId: string | null = null;
+      const uEnded = await listen<{ attempt_id?: string; path?: string } | undefined>('track-ended', event => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const currentAttempt = state.currentAttemptId;
+        const eventAttempt = event?.payload?.attempt_id;
+        if (!state.currentTrack || !currentAttempt || eventAttempt !== currentAttempt
+          || (event?.payload?.path && (state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && event.payload.path !== state.playback.current_track)) return;
+        if (eventAttempt && eventAttempt === lastHandledAttemptId) {
+          console.log('[App] Discarding duplicate track-ended event for attempt:', eventAttempt);
+          return;
+        }
+        if (state.playback.status === 'Stopped') {
+          console.log('[App] Discarding track-ended event received while playback is stopped');
+          return;
+        }
+        if (state.currentTrack?.source_context && state.playback.is_buffering) return;
+        lastHandledAttemptId = currentAttempt;
+        markListeningEnd('completed');
+        console.log('[App] Received track-ended event from backend. Applying end policy.');
+        void state.handleNaturalTrackEnd();
+      });
+      if (isCancelled) { uEnded(); return; }
+      cleanups.push(uEnded);
+
+      const uPlaybackError = await listen<{ path: string; attempt_id?: string; error: string }>('playback-error', (event) => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const payload = event.payload;
+        const error = payload.error;
+        const incomingAttemptId = payload.attempt_id;
+        if (!state.currentTrack || !state.currentAttemptId || incomingAttemptId !== state.currentAttemptId
+          || (payload.path && (state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && payload.path !== state.playback.current_track)) return;
+        state.reportPlaybackFailure(error);
+        window.dispatchEvent(new CustomEvent('ui-stream-buffering', { detail: { active: false } }));
+      });
+      if (isCancelled) { uPlaybackError(); return; }
+      cleanups.push(uPlaybackError);
+
+      const uPlaybackCancelled = await listen<{ attempt_id?: string; path?: string }>('playback-cancelled', (event) => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const incomingAttemptId = event.payload?.attempt_id;
+        if (!incomingAttemptId || !state.currentAttemptId || incomingAttemptId === state.currentAttemptId) {
+          useStore.setState((prev) => ({
+            playback: { ...prev.playback, is_buffering: false }
+          }));
+          window.dispatchEvent(new CustomEvent('ui-stream-buffering', { detail: { active: false } }));
+        }
+      });
+      if (isCancelled) { uPlaybackCancelled(); return; }
+      cleanups.push(uPlaybackCancelled);
+
+      const uPlaybackSuccess = await listen<string>('playback-success', (event) => {
+        if (isCancelled) return;
+        console.log('[App] Playback success:', event.payload);
+      });
+      if (isCancelled) { uPlaybackSuccess(); return; }
+      cleanups.push(uPlaybackSuccess);
+
+      const uLib = await listen('library-updated', () => {
+        if (isCancelled) return;
+        useStore.getState().loadLibrary();
+      });
+      if (isCancelled) { uLib(); return; }
+      cleanups.push(uLib);
+
+      const uPlay = await listen('media-play', () => {
+        if (isCancelled) return;
+        useStore.getState().resumeTrack();
+      });
+      if (isCancelled) { uPlay(); return; }
+      cleanups.push(uPlay);
+
+      const uPause = await listen('media-pause', () => {
+        if (isCancelled) return;
+        useStore.getState().pauseTrack();
+      });
+      if (isCancelled) { uPause(); return; }
+      cleanups.push(uPause);
+
+      const uToggle = await listen('media-toggle', () => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        if (state.playback.status === 'Playing') state.pauseTrack();
+        else state.resumeTrack();
+      });
+      if (isCancelled) { uToggle(); return; }
+      cleanups.push(uToggle);
+
+      const uNext = await listen('media-next', () => {
+        if (isCancelled) return;
+        useStore.getState().playNext();
+      });
+      if (isCancelled) { uNext(); return; }
+      cleanups.push(uNext);
+
+      const uPrev = await listen('media-prev', () => {
+        if (isCancelled) return;
+        useStore.getState().playPrev();
+      });
+      if (isCancelled) { uPrev(); return; }
+      cleanups.push(uPrev);
+
+      const uSeek = await listen('media-seek', (event: any) => {
+        if (isCancelled) return;
+        const pos = typeof event.payload === 'number' ? event.payload : parseFloat(event.payload);
+        if (!isNaN(pos)) {
+          useStore.getState().seek(pos);
+        }
+      });
+      if (isCancelled) { uSeek(); return; }
+      cleanups.push(uSeek);
+
+      const uVolume = await listen('media-volume', (event: any) => {
+        if (isCancelled) return;
+        const vol = typeof event.payload === 'number' ? event.payload : parseFloat(event.payload);
+        if (!isNaN(vol)) {
+          useStore.getState().setVolume(vol);
+        }
+      });
+      if (isCancelled) { uVolume(); return; }
+      cleanups.push(uVolume);
+
+      const uShuffle = await listen('media-shuffle', () => {
+        if (isCancelled) return;
+        useStore.getState().toggleShuffle();
+      });
+      if (isCancelled) { uShuffle(); return; }
+      cleanups.push(uShuffle);
+
+      const uRepeat = await listen('media-repeat', () => {
+        if (isCancelled) return;
+        useStore.getState().toggleRepeat();
+      });
+      if (isCancelled) { uRepeat(); return; }
+      cleanups.push(uRepeat);
+
+      const uDesktopToggle = await listen('toggle-desktop-lyrics', () => {
+        if (isCancelled) return;
+        useStore.getState().toggleDesktopLyrics();
+      });
+      if (isCancelled) { uDesktopToggle(); return; }
+      cleanups.push(uDesktopToggle);
+
+      const uDesktopLock = await listen('toggle-desktop-lyrics-lock', () => {
+        if (isCancelled) return;
+        useStore.getState().toggleDesktopLyricsLocked();
+      });
+      if (isCancelled) { uDesktopLock(); return; }
+      cleanups.push(uDesktopLock);
+
+      const uDesktopClosed = await listen('desktop-lyrics-closed', () => {
+        if (isCancelled) return;
+        useStore.setState({ desktopLyricsOpen: false });
+      });
+      if (isCancelled) { uDesktopClosed(); return; }
+      cleanups.push(uDesktopClosed);
+
+      const uDesktopLockStatus = await listen('desktop-lyrics-lock-status', (event: any) => {
+        if (isCancelled) return;
+        useStore.setState({ desktopLyricsLocked: Boolean(event.payload) });
+      });
+      if (isCancelled) { uDesktopLockStatus(); return; }
+      cleanups.push(uDesktopLockStatus);
+
+      const uBufferingStart = await listen<string | { path: string; attempt_id?: string }>('stream-buffering-start', (event) => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const payload = event.payload;
+        if (!state.currentTrack || !state.currentAttemptId || typeof payload === 'string' || payload.attempt_id !== state.currentAttemptId
+          || ((state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && payload.path !== state.playback.current_track)) return;
+        useStore.setState((s) => ({ playback: { ...s.playback, is_buffering: true } }));
+        window.dispatchEvent(new CustomEvent('ui-stream-buffering', {
+          detail: { active: true, title: state.currentTrack.title || 'Online Stream', artist: state.currentTrack.artist || 'Preparing stream & buffering...' }
+        }));
+      });
+      if (isCancelled) { uBufferingStart(); return; }
+      cleanups.push(uBufferingStart);
+
+      const uBufferingEnd = await listen<string | { path: string; attempt_id?: string }>('stream-buffering-end', (event) => {
+        if (isCancelled) return;
+        const state = useStore.getState();
+        const payload = event.payload;
+        if (!state.currentTrack || !state.currentAttemptId || typeof payload === 'string' || payload.attempt_id !== state.currentAttemptId
+          || ((state.currentTrack.source_context || !isStreamTrack(state.currentTrack.path, state.currentTrack.format)) && payload.path !== state.playback.current_track)) return;
+        useStore.setState((s) => ({ playback: { ...s.playback, is_buffering: false } }));
+        window.dispatchEvent(new CustomEvent('ui-stream-buffering', { detail: { active: false } }));
+      });
+      if (isCancelled) { uBufferingEnd(); return; }
+      cleanups.push(uBufferingEnd);
+
+      const uBatchProgress = await listen('download_batch_progress', (event: any) => {
+        if (isCancelled) return;
+        const payload = event.payload;
+        useStore.setState({ batchDownloadProgress: payload });
+
+        if (payload?.error) {
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: {
+              message: payload.error,
+              type: 'error',
+              duration: 6000,
+            }
+          }));
+        } else if (payload && !payload.is_done && payload.current_title && payload.current_title !== 'Completed') {
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: {
+              message: `Downloading (${payload.completed + 1}/${payload.total}): ${payload.current_title}`,
+              type: 'info',
+              duration: 3000,
+            }
+          }));
+        }
+      });
+      if (isCancelled) { uBatchProgress(); return; }
+      cleanups.push(uBatchProgress);
+
+      const uDevicesChanged = await listen('audio-devices-changed', (event: any) => {
+        if (isCancelled) return;
+        if (Array.isArray(event.payload?.devices)) {
+          useStore.setState({ devices: event.payload.devices });
+        }
+      });
+      if (isCancelled) { uDevicesChanged(); return; }
+      cleanups.push(uDevicesChanged);
+
+      const uDeviceChanged = await listen('audio-device-changed', (event: any) => {
+        if (isCancelled) return;
+        const { device, is_default } = event.payload || {};
+        if (is_default || device) {
+          void useStore.getState().setAudioDevice(is_default ? '[System Default Device]' : device,
+            { backendSelected: true, fallback: !!is_default });
+        }      });
+      if (isCancelled) { uDeviceChanged(); return; }
+      cleanups.push(uDeviceChanged);
+
+      const uDeviceFallback = await listen('audio-device-fallback', () => {
+        if (isCancelled) return;
+        void useStore.getState().setAudioDevice('[System Default Device]', { backendSelected: true, fallback: true });
+      });
+      if (isCancelled) { uDeviceFallback(); return; }
+      cleanups.push(uDeviceFallback);
+
+      const uDeepLink = await listen<string | string[]>('deep-link', (event) => {
+        if (isCancelled) return;
+        const payload = event.payload;
+        const urls = Array.isArray(payload) ? payload : [payload];
+        for (const rawUrl of urls) {
+          if (typeof rawUrl === 'string' && stripAideoDeepLinkScheme(rawUrl) !== null) {
+            handleDeepLink(rawUrl);
+          }
+        }
+      });
+      if (isCancelled) { uDeepLink(); return; }
+      cleanups.push(uDeepLink);
+
+      // Window Size, Position & State Restoration and Tracking
+      if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          const { PhysicalSize, PhysicalPosition } = await import('@tauri-apps/api/dpi');
+          const win = getCurrentWindow();
+          if (win.label === 'main') {
+            const savedStateRaw = localStorage.getItem('aideo-window-state');
+            if (savedStateRaw) {
+              try {
+                const savedState = JSON.parse(savedStateRaw);
+                if (savedState.maximized) {
+                  await win.maximize();
+                } else {
+                  if (savedState.width && savedState.height && savedState.width >= 300 && savedState.height >= 200) {
+                    await win.setSize(new PhysicalSize(savedState.width, savedState.height));
+                  }
+                  if (
+                    typeof savedState.x === 'number' &&
+                    typeof savedState.y === 'number' &&
+                    savedState.x > -10000 &&
+                    savedState.y > -10000
+                  ) {
+                    await win.setPosition(new PhysicalPosition(savedState.x, savedState.y));
+                  }
+                }
+              } catch (_) {}
+            }
+
+            let saveTimeout: any = null;
+            const persistWindowState = async () => {
+              try {
+                const isMin = await win.isMinimized();
+                if (isMin) return;
+
+                const isMax = await win.isMaximized();
+                if (isMax) {
+                  localStorage.setItem('aideo-window-state', JSON.stringify({ maximized: true }));
+                  return;
+                }
+                const size = await win.innerSize();
+                const pos = await win.outerPosition();
+                if (
+                  size.width >= 300 &&
+                  size.height >= 200 &&
+                  pos.x > -10000 &&
+                  pos.y > -10000
+                ) {
+                  localStorage.setItem('aideo-window-state', JSON.stringify({
+                    maximized: false,
+                    width: size.width,
+                    height: size.height,
+                    x: pos.x,
+                    y: pos.y
+                  }));
+                }
+              } catch (_) {}
+            };
+
+            const debouncedSave = () => {
+              if (saveTimeout) clearTimeout(saveTimeout);
+              saveTimeout = setTimeout(persistWindowState, 300);
+            };
+
+            const uResize = await win.onResized(debouncedSave);
+            const uMove = await win.onMoved(debouncedSave);
+            if (isCancelled) {
+              uResize();
+              uMove();
+            } else {
+              cleanups.push(uResize, uMove);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to setup window state persistence:', e);
+        }
+      }
+    };
+    setupListeners();
+
+    window.addEventListener('keydown', handlePlayerShortcut);
+
+    return () => {
+      isCancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('keydown', handlePlayerShortcut);
+      cleanups.forEach(f => f());
+    };
+  }, []);
+
+
+
+  useEffect(() => {
+    // Prefetch secondary views during browser idle time so transitions never pause for chunk loading
+    const prefetch = () => {
+      import('./components/AlbumsView');
+      import('./components/SettingsView');
+      import('./components/ChartsView');
+      import('./components/ListeningInsightsView');
+      import('./components/LastfmView');
+      import('./components/ListenbrainzView');
+      import('./components/AideoLabView');
+      import('./components/DownloadedView');
+    };
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(prefetch, { timeout: 3000 });
+      } else {
+        setTimeout(prefetch, 1500);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const themeMode = localStorage.getItem('aideo-theme-mode');
+    if (themeMode === 'preset') {
+      const pc = localStorage.getItem('aideo-preset-color') || '#8b5cf6';
+      const pr = localStorage.getItem('aideo-preset-rgb') || '139, 92, 246';
+      document.documentElement.style.setProperty('--dynamic-accent', pc);
+      document.documentElement.style.setProperty('--accent-rgb', pr);
+      return;
+    } else if (themeMode === 'windows') {
+      invoke('get_windows_accent_color')
+        .then((color: any) => {
+          document.documentElement.style.setProperty('--dynamic-accent', color);
+          let r = 139, g = 92, b = 246;
+          if (color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            r = parseInt(hex.substring(0, 2), 16);
+            g = parseInt(hex.substring(2, 4), 16);
+            b = parseInt(hex.substring(4, 6), 16);
+          }
+          document.documentElement.style.setProperty('--accent-rgb', `${r},${g},${b}`);
+        })
+        .catch((err: any) => console.error("Failed to fetch Windows accent color:", err));
+      return;
+    }
+
+    document.documentElement.style.setProperty('--dynamic-accent', accentColor);
+    
+    let r = 139, g = 92, b = 246;
+    if (accentColor.startsWith('rgb')) {
+      const m = accentColor.match(/\d+/g);
+      if (m && m.length >= 3) {
+        r = parseInt(m[0]); g = parseInt(m[1]); b = parseInt(m[2]);
+      }
+    } else if (accentColor.startsWith('#')) {
+      const hex = accentColor.replace('#', '');
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    }
+    
+    document.documentElement.style.setProperty('--accent-rgb', `${r},${g},${b}`);
+  }, [accentColor]);
+
+  if (miniPlayerMode) {
+    return (
+      <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
+        <div className={`mini-player-outer-wrapper ${isLightTheme ? 'light-theme' : ''}`}>
+          <MiniPlayer />
+          <ToastContainer />
+          <DownloadManager />
+        </div>
+      </MotionConfig>
+    );
+  }
+
+  return (
+    <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
+      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""}`}>
+        <Sidebar />
+      <main className="app-main">
+        {/* Keep the core heavy views mounted to ensure buttery-smooth instant transitions without re-mounting lag */}
+        <div style={{ display: view === 'aideo' ? 'block' : 'none', height: '100%', width: '100%' }}>
+          <ErrorBoundary name="Aideo Discovery">
+            <AideoView />
+          </ErrorBoundary>
+        </div>
+        <div style={{ display: (view === 'library' || view === 'loved_streams') ? 'block' : 'none', height: '100%', width: '100%' }}>
+          <ErrorBoundary name="Music Library">
+            <LibraryView />
+          </ErrorBoundary>
+        </div>
+        {visitedViews.has('albums') && (
+          <div className="library-wrap albums-page-wrap" data-scroll-container="true" style={{ display: view === 'albums' ? 'block' : 'none', height: '100%', width: '100%', overflowY: 'auto' }}>
+            <Suspense fallback={<ViewSkeleton type="albums" />}>
+              <ErrorBoundary name="Albums View">
+                <AlbumsView />
+              </ErrorBoundary>
+            </Suspense>
+          </div>
+        )}
+        {visitedViews.has('settings') && (
+          <div style={{ display: view === 'settings' ? 'block' : 'none', height: '100%', width: '100%' }}>
+            <Suspense fallback={<ViewSkeleton type="settings" />}>
+              <ErrorBoundary name="Settings">
+                <SettingsView />
+              </ErrorBoundary>
+            </Suspense>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {view === 'nowplaying' && (
+            <motion.div key="np" style={{ height: '100%' }}
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.06 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
+              <ErrorBoundary name="Now Playing">
+                <NowPlayingView />
+              </ErrorBoundary>
+            </motion.div>
+          )}
+          {view === 'lastfm' && (
+            <motion.div key="lfm" style={{ height: '100%' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="Last.fm">
+                  <LastfmView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+          {view === 'listenbrainz' && (
+            <motion.div key="listenbrainz" style={{ height: '100%' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="ListenBrainz">
+                  <ListenbrainzView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+
+          {view === 'aideo_lab' && (
+            <motion.div key="aideo_lab" style={{ height: '100%' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="Aideo Lab">
+                  <AideoLabView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+
+          {view === 'insights' && (
+            <motion.div key="insights" style={{ height: '100%' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="Insights">
+                  <ListeningInsightsView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+
+          {view === 'charts' && (
+            <motion.div key="charts" style={{ height: '100%' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="charts" />}>
+                <ErrorBoundary name="Charts">
+                  <ChartsView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+
+          {view === 'downloaded' && (
+            <motion.div key="downloaded" style={{ height: '100%', overflow: 'hidden' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="Downloaded Tracks">
+                  <DownloadedView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+
+          {view === 'fullscreen' && (
+            <motion.div key="fullscreen" style={{ height: '100%' }}
+              initial={{ opacity: 0, scale: 1.06 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
+              <Suspense fallback={<ViewSkeleton type="generic" />}>
+                <ErrorBoundary name="Fullscreen">
+                  <FullscreenView />
+                </ErrorBoundary>
+              </Suspense>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+      <PlaybackRecovery />
+      {view !== 'fullscreen' && <PlayerBar />}
+      <ScrollToTopButton />
+      <ToastContainer />
+      <DownloadManager />
+      <AnimatePresence>
+        <QueueView key="queue" />
+        <AudioControlCenter key="audio-cc" />
+        {lastScrobble && (
+          <motion.div
+            key="scrobble-toast"
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="scrobble-toast"
+          >
+            <Radio size={14} className="pulse" />
+            <span>Scrobbled: <strong>{lastScrobble.track}</strong></span>
+          </motion.div>
+        )}
+
+
+        {updateModalOpen && updateInfo && (
+          <motion.div
+            key="update-popup"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              width: 340,
+              background: 'var(--glass)',
+              backdropFilter: 'blur(24px)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 16,
+              padding: 24,
+              boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+              zIndex: 10000,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ background: updateError ? '#ef4444' : 'var(--accent)', borderRadius: '50%', padding: 8, display: 'flex' }}>
+                  <Download size={18} color="white" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{updateError ? 'Update Failed' : 'Update Available'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Version {updateInfo.version}</div>
+                </div>
+              </div>
+              <button 
+                className="modal-close" 
+                style={{ padding: 8, margin: -8, cursor: 'pointer' }} 
+                onClick={(e) => { e.stopPropagation(); dismissModal(); }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            {updateError ? (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: '#f87171', marginBottom: 10, lineHeight: 1.4 }}>
+                  The automatic installation encountered an issue: {updateError}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.4 }}>
+                  You can retry, or download and install the update manually.
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16, maxHeight: 60, overflowY: 'auto', lineHeight: 1.5 }}>
+                {updateInfo.body || 'A new version of Aideo is ready to install.'}
+              </div>
+            )}
+
+            {updaterStatus === 'downloading' && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, color: 'var(--text-dim)' }}>
+                  <span>Downloading update...</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>{downloadProgress.percentage}%</span>
+                </div>
+                <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div 
+                    style={{ 
+                      height: '100%', 
+                      width: `${downloadProgress.percentage}%`, 
+                      background: 'var(--accent)', 
+                      transition: 'width 0.2s ease' 
+                    }} 
+                  />
+                </div>
+                {downloadProgress.totalBytes > 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4, textAlign: 'right' }}>
+                    {(downloadProgress.downloadedBytes / (1024 * 1024)).toFixed(1)} MB / {(downloadProgress.totalBytes / (1024 * 1024)).toFixed(1)} MB
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {!updateError && (
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', padding: '10px 0', display: 'flex', justifyContent: 'center', gap: 8 }}
+                  disabled={updaterStatus === 'downloading'}
+                  onClick={installUpdate}
+                >
+                  {updaterStatus === 'downloading' ? (
+                    'Downloading & Installing...'
+                  ) : updaterStatus === 'downloaded' ? (
+                    'Restarting Aideo...'
+                  ) : (
+                    <>
+                      <Download size={16} />
+                      Install Update Now
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                className={updateError ? "btn btn-primary" : "btn btn-secondary"}
+                style={{ width: '100%', padding: '10px 0', display: 'flex', justifyContent: 'center', gap: 8 }}
+                onClick={() => {
+                  openUrl('https://github.com/Alirull18/Aideo-Music-Player/releases/latest').catch(() => window.open('https://github.com/Alirull18/Aideo-Music-Player/releases/latest', '_blank'));
+                }}
+              >
+                <Download size={16} />
+                Download Manually from GitHub
+              </button>
+
+              {updateError && (
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: '100%', padding: '10px 0' }}
+                  onClick={dismissModal}
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        <AnimatePresence key="custom-prompt">
+          {customPrompt.open && (
+            <AideoPrompt
+              title={customPrompt.title}
+              placeholder={customPrompt.placeholder}
+              initialValue={customPrompt.initialValue}
+              actionLabel={customPrompt.actionLabel}
+              onClose={() => setCustomPrompt({ open: false })}
+              onSubmit={customPrompt.onSubmit}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence key="cover-art">
+          {coverArtModalTrack && <CoverArtModal />}
+        </AnimatePresence>
+
+        <AnimatePresence key="add-to-playlist">
+          {playlistModalTrack && <AddToPlaylistModal />}
+        </AnimatePresence>
+
+        <AnimatePresence key="tag-editor">
+          {(tagEditorTrack || (tagEditorBatchTracks && tagEditorBatchTracks.length > 0)) && <TagEditorModal />}
+        </AnimatePresence>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {(showOnboarding || !onboardingCompleted) && (
+          <motion.div
+            key="onboarding-wizard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ zIndex: 99999 }}
+          >
+            <OnboardingWizard />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <DebugLogsModal isOpen={showDebugLogs} onClose={() => setShowDebugLogs(false)} />
+
+      </div>
+    </MotionConfig>
+  );
+}
+
+export default function App() {
+  const isDesktopLyricsInitial = typeof window !== 'undefined' && (
+    window.location.search.includes('window=desktop-lyrics') || 
+    window.location.hash.includes('desktop-lyrics')
+  );
+  const [isOauthChild, setIsOauthChild] = useState(false);
+  const [isDesktopLyricsWindow, setIsDesktopLyricsWindow] = useState(isDesktopLyricsInitial);
+
+  useEffect(() => {
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      const win = getCurrentWindow();
+      if (win.label === 'supabase-login') {
+        setIsOauthChild(true);
+      } else if (win.label === 'desktop-lyrics') {
+        setIsDesktopLyricsWindow(true);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const isBrowserCallbackRoute = typeof window !== 'undefined' && 
+    (window.location.hash.includes('access_token') || window.location.search.includes('code') || window.location.pathname.includes('callback'));
+
+  if (isBrowserCallbackRoute && !(window as any).__TAURI_INTERNALS__) {
+    return <BrowserCallbackLanding />;
+  }
+
+  if (isOauthChild) {
+    return <OauthChildCallback />;
+  }
+
+  if (isDesktopLyricsWindow || isDesktopLyricsInitial) {
+    return (
+      <ErrorBoundary name="Desktop Lyrics">
+        <DesktopLyricBar />
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary name="Aideo Music Player">
+      <AideoApp />
+    </ErrorBoundary>
+  );
+}

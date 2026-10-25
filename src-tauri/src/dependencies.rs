@@ -1,0 +1,425 @@
+use tauri::Emitter;
+use futures::StreamExt;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use serde::Serialize;
+use sha2::{Sha256, Digest};
+
+#[derive(Serialize, Debug, Clone)]
+pub struct DependencyStatus {
+    pub ytdlp_installed: bool,
+    pub ffmpeg_installed: bool,
+    pub ytdlp_size: u64,
+    pub ffmpeg_size: u64,
+}
+
+fn get_aideo_dir() -> PathBuf {
+    let data_dir = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
+    data_dir.join("Aideo")
+}
+
+/// Bump this whenever the FFmpeg plugin build changes (e.g. adding DSD support)
+/// so existing installs are flagged for reinstall in Settings -> Plugins.
+const FFMPEG_PLUGIN_VERSION: &str = "2";
+
+fn is_ffmpeg_plugin_up_to_date(aideo_dir: &Path) -> bool {
+    std::fs::read_to_string(aideo_dir.join("ffmpeg.version"))
+        .map(|content| content.trim() == FFMPEG_PLUGIN_VERSION)
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+pub fn get_dependencies_status() -> Result<DependencyStatus, String> {
+    let aideo_dir = get_aideo_dir();
+    let ytdlp_path = aideo_dir.join("yt-dlp.exe");
+    let ffmpeg_path = aideo_dir.join("ffmpeg.exe");
+
+    let ytdlp_size = std::fs::metadata(&ytdlp_path).map(|m| m.len()).unwrap_or(0);
+    let ffmpeg_size = std::fs::metadata(&ffmpeg_path).map(|m| m.len()).unwrap_or(0);
+
+    Ok(DependencyStatus {
+        ytdlp_installed: ytdlp_path.exists(),
+        ffmpeg_installed: ffmpeg_path.exists() && is_ffmpeg_plugin_up_to_date(&aideo_dir),
+        ytdlp_size,
+        ffmpeg_size,
+    })
+}
+
+pub fn parse_sha256sums_for_binary(text: &str, target_binary: &str) -> Option<String> {
+    for line in text.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 2 && parts[1].trim_start_matches('*') == target_binary {
+            return Some(parts[0].trim().to_lowercase());
+        }
+    }
+    None
+}
+
+pub async fn fetch_ytdlp_expected_sha256() -> Option<String> {
+    let client = crate::get_http_client();
+    let res = client
+        .get("https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS")
+        .header("User-Agent", "AideoMusicPlayer/0.9.12")
+        .send()
+        .await
+        .ok()?;
+    if !res.status().is_success() {
+        return None;
+    }
+    let text = res.text().await.ok()?;
+    parse_sha256sums_for_binary(&text, "yt-dlp.exe")
+}
+
+pub async fn download_with_progress_and_sha256(
+    url: &str,
+    dest_path: &Path,
+    dep_id: &str,
+    expected_sha256: Option<&str>,
+    app_handle: &tauri::AppHandle,
+) -> Result<(), String> {
+    if let Ok(parsed) = url::Url::parse(url) {
+        let host = parsed.host_str().unwrap_or("").to_lowercase();
+        let is_allowed = host == "github.com" 
+            || host.ends_with(".github.com") 
+            || host == "githubusercontent.com" 
+            || host.ends_with(".githubusercontent.com");
+        if !is_allowed {
+            return Err("Security error: Dependency download domain not allowed.".to_string());
+        }
+    } else {
+        return Err("Invalid dependency download URL.".to_string());
+    }
+
+    let client = crate::get_http_client();
+    let res = client
+        .get(url)
+        .header("User-Agent", "AideoMusicPlayer/0.9.12")
+        .send()
+        .await
+        .map_err(|e| format!("Network request failed: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(format!("Dependency download failed with HTTP status: {}", res.status()));
+    }
+
+    let total_size = res
+        .content_length()
+        .ok_or_else(|| "Failed to fetch file content size".to_string())?;
+
+    if total_size < 1_000_000 {
+        return Err("Invalid dependency binary size (too small or corrupted).".to_string());
+    }
+
+    let temp_dest = dest_path.with_extension("tmp");
+    let mut file = std::fs::File::create(&temp_dest)
+        .map_err(|e| format!("Failed to create temporary destination file: {}", e))?;
+
+    let mut hasher = Sha256::new();
+    let mut downloaded = 0;
+    let mut stream = res.bytes_stream();
+    let mut last_emit = std::time::Instant::now();
+
+    while let Some(item) = stream.next().await {
+        let chunk = item.map_err(|e| format!("Error during streaming download: {}", e))?;
+        hasher.update(&chunk);
+        file.write_all(&chunk)
+            .map_err(|e| format!("Failed to write chunk to disk: {}", e))?;
+        downloaded += chunk.len() as u64;
+
+        let now = std::time::Instant::now();
+        if now.duration_since(last_emit).as_millis() > 150 || downloaded == total_size {
+            let percent = (downloaded as f64 / total_size as f64) * 100.0;
+            let _ = app_handle.emit(
+                "dependency-download-progress",
+                serde_json::json!({
+                    "id": dep_id,
+                    "percent": percent,
+                    "downloaded": downloaded,
+                    "total": total_size
+                }),
+            );
+            last_emit = now;
+        }
+    }
+    drop(file);
+
+    let actual_sha256 = hex::encode(hasher.finalize());
+    if let Some(expected) = expected_sha256 {
+        let expected_clean = expected.trim().to_lowercase();
+        if !expected_clean.is_empty() && actual_sha256.to_lowercase() != expected_clean {
+            let _ = std::fs::remove_file(&temp_dest);
+            return Err(format!(
+                "SHA-256 checksum verification failed for {}: expected {}, got {}",
+                dep_id, expected_clean, actual_sha256
+            ));
+        }
+    }
+
+    std::fs::rename(&temp_dest, dest_path)
+        .map_err(|e| format!("Failed to finalize dependency installation: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn install_dependency(app_handle: tauri::AppHandle, dep_id: String) -> Result<bool, String> {
+    let aideo_dir = get_aideo_dir();
+    if !aideo_dir.exists() {
+        std::fs::create_dir_all(&aideo_dir).map_err(|e| format!("Failed to create Aideo directory: {}", e))?;
+    }
+
+    match dep_id.as_str() {
+        "ytdlp" => {
+            let dest = aideo_dir.join("yt-dlp.exe");
+            let url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "Downloading high-performance YouTube audio decoder in background...",
+                "type": "info"
+            }));
+            let expected_hash = fetch_ytdlp_expected_sha256().await;
+            download_with_progress_and_sha256(url, &dest, "ytdlp", expected_hash.as_deref(), &app_handle).await?;
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "YouTube audio decoder successfully installed!",
+                "type": "success"
+            }));
+        }
+        "ffmpeg" => {
+            let zip_dest = aideo_dir.join("ffmpeg.zip");
+            let url = "https://github.com/Alirull18/Aideo-Music-Player/releases/download/ffmpeg-audio-dsd/ffmpeg-audio-only-8.0.1-windows-x64.zip";
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "Downloading FFmpeg Transcoder in background...",
+                "type": "info"
+            }));
+            const FFMPEG_EXPECTED_SHA256: &str = "0bf272f23f6be7d032e0a95b463939a27ccad241d8989715d77372d4f45e1d89";
+            download_with_progress_and_sha256(url, &zip_dest, "ffmpeg", Some(FFMPEG_EXPECTED_SHA256), &app_handle).await?;
+            
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "Extracting FFmpeg engine...",
+                "type": "info"
+            }));
+
+            let aideo_dir_clone = aideo_dir.clone();
+            let zip_dest_clone = zip_dest.clone();
+            let extract_res = tokio::task::spawn_blocking(move || {
+                let file = std::fs::File::open(&zip_dest_clone)
+                    .map_err(|e| format!("Failed to open downloaded zip: {}", e))?;
+                let mut archive = zip::ZipArchive::new(file)
+                    .map_err(|e| format!("Failed to read zip archive: {}", e))?;
+
+                let mut extracted = false;
+                for i in 0..archive.len() {
+                    let mut file = archive.by_index(i)
+                        .map_err(|e| format!("Failed to retrieve file from zip: {}", e))?;
+                    
+                    let outpath = match file.enclosed_name() {
+                        Some(path) => path.to_owned(),
+                        None => continue,
+                    };
+
+                    if outpath.file_name().and_then(|n| n.to_str()).map(|n| n.eq_ignore_ascii_case("ffmpeg.exe")).unwrap_or(false) {
+                        let mut outfile = std::fs::File::create(aideo_dir_clone.join("ffmpeg.exe"))
+                            .map_err(|e| format!("Failed to create destination file: {}", e))?;
+                        std::io::copy(&mut file, &mut outfile)
+                            .map_err(|e| format!("Failed to extract ffmpeg.exe: {}", e))?;
+                        extracted = true;
+                        break;
+                    }
+                }
+
+                let _ = std::fs::remove_file(&zip_dest_clone);
+
+                if !extracted {
+                    return Err("ffmpeg.exe was not found inside the zip archive".to_string());
+                }
+                Ok(())
+            }).await.map_err(|e| format!("Extraction task panicked: {}", e))?;
+            
+            extract_res?;
+
+            std::fs::write(aideo_dir.join("ffmpeg.version"), FFMPEG_PLUGIN_VERSION)
+                .map_err(|e| format!("Failed to write FFmpeg version marker: {}", e))?;
+
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "FFmpeg Transcoder successfully installed!",
+                "type": "success"
+            }));
+        }
+        _ => return Err(format!("Unknown dependency identifier: {}", dep_id)),
+    }
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn uninstall_dependency(app_handle: tauri::AppHandle, dep_id: String) -> Result<bool, String> {
+    let aideo_dir = get_aideo_dir();
+    
+    match dep_id.as_str() {
+        "ytdlp" => {
+            let path = aideo_dir.join("yt-dlp.exe");
+            if path.exists() {
+                std::fs::remove_file(&path).map_err(|e| format!("Failed to delete yt-dlp: {}", e))?;
+            }
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "YouTube audio decoder successfully uninstalled and deleted from system.",
+                "type": "success"
+            }));
+        }
+        "ffmpeg" => {
+            let path = aideo_dir.join("ffmpeg.exe");
+            if path.exists() {
+                std::fs::remove_file(&path).map_err(|e| format!("Failed to delete FFmpeg: {}", e))?;
+            }
+            let _ = std::fs::remove_file(aideo_dir.join("ffmpeg.version"));
+            let _ = app_handle.emit("ui-toast", serde_json::json!({
+                "message": "FFmpeg Transcoder successfully uninstalled and deleted from system.",
+                "type": "success"
+            }));
+        }
+        _ => return Err(format!("Unknown dependency identifier: {}", dep_id)),
+    }
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn check_update_ytdlp(app_handle: tauri::AppHandle) -> Result<bool, String> {
+    let aideo_dir = get_aideo_dir();
+    let ytdlp_path = aideo_dir.join("yt-dlp.exe");
+
+    if !ytdlp_path.exists() {
+        return install_dependency(app_handle, "ytdlp".to_string()).await;
+    }
+
+    let _ = app_handle.emit("ui-toast", serde_json::json!({
+        "message": "Checking for yt-dlp binary updates...",
+        "type": "info"
+    }));
+
+    // Method 1: Execute yt-dlp -U in background
+    let ytdlp_clone = ytdlp_path.clone();
+    let update_output = tokio::task::spawn_blocking(move || {
+        let mut cmd = std::process::Command::new(&ytdlp_clone);
+        cmd.arg("-U");
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+        cmd.output()
+    }).await.map_err(|e| e.to_string())?;
+
+    let is_updated = match update_output {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+            println!("[ytdlp-update] stdout: {}, stderr: {}", stdout, stderr);
+            stdout.contains("Updated yt-dlp") || stdout.contains("yt-dlp is up to date") || out.status.success()
+        }
+        Err(_) => false,
+    };
+
+    if is_updated {
+        let _ = app_handle.emit("ui-toast", serde_json::json!({
+            "message": "yt-dlp stream engine is up to date!",
+            "type": "success"
+        }));
+        return Ok(true);
+    }
+
+    // Method 2 fallback: Re-download latest binary if -U failed
+    let dest = aideo_dir.join("yt-dlp.exe");
+    let url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+    let expected_hash = fetch_ytdlp_expected_sha256().await;
+    download_with_progress_and_sha256(url, &dest, "ytdlp", expected_hash.as_deref(), &app_handle).await?;
+    
+    let _ = app_handle.emit("ui-toast", serde_json::json!({
+        "message": "yt-dlp binary successfully updated to latest release!",
+        "type": "success"
+    }));
+
+    Ok(true)
+}
+
+pub fn spawn_background_ytdlp_updater(_app_handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        // Wait 15 seconds after startup before background check
+        std::thread::sleep(std::time::Duration::from_secs(15));
+        let aideo_dir = get_aideo_dir();
+        let ytdlp_path = aideo_dir.join("yt-dlp.exe");
+        if ytdlp_path.exists() {
+            println!("[ytdlp-auto-update] Running background check for yt-dlp updates...");
+            let mut cmd = std::process::Command::new(&ytdlp_path);
+            cmd.arg("-U");
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            let _ = cmd.output();
+            println!("[ytdlp-auto-update] Background update check completed.");
+        }
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ffmpeg_zip_reads_deflated_payload_and_rejects_traversal_paths() {
+        use std::io::{Cursor, Read, Write};
+
+        let payload = b"MZ fixture";
+        let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        writer.start_file("../ffmpeg.exe", options).unwrap();
+        writer.write_all(payload).unwrap();
+        writer.start_file("bundle/bin/ffmpeg.exe", options).unwrap();
+        writer.write_all(payload).unwrap();
+
+        let mut archive = zip::ZipArchive::new(writer.finish().unwrap()).unwrap();
+        assert!(archive.by_index(0).unwrap().enclosed_name().is_none());
+        let mut file = archive.by_index(1).unwrap();
+        assert_eq!(file.enclosed_name().unwrap().file_name().unwrap(), "ffmpeg.exe");
+        let mut extracted = Vec::new();
+        file.read_to_end(&mut extracted).unwrap();
+        assert_eq!(extracted, payload);
+    }
+
+    #[test]
+    fn test_parse_sha256sums_for_binary_exact() {
+        let sums = "\
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  yt-dlp
+a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0  yt-dlp.exe
+fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210  yt-dlp_macos
+";
+        let parsed = parse_sha256sums_for_binary(sums, "yt-dlp.exe");
+        assert_eq!(parsed, Some("a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0".to_string()));
+    }
+
+    #[test]
+    fn test_parse_sha256sums_for_binary_missing() {
+        let sums = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  yt-dlp\n";
+        assert_eq!(parse_sha256sums_for_binary(sums, "yt-dlp.exe"), None);
+    }
+
+    #[test]
+    fn test_ffmpeg_plugin_version_marker() {
+        let tmp = std::env::temp_dir().join(format!("aideo_dep_marker_test_{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&tmp);
+
+        assert!(!is_ffmpeg_plugin_up_to_date(&tmp));
+
+        std::fs::write(tmp.join("ffmpeg.version"), FFMPEG_PLUGIN_VERSION).unwrap();
+        assert!(is_ffmpeg_plugin_up_to_date(&tmp));
+
+        std::fs::write(tmp.join("ffmpeg.version"), "stale").unwrap();
+        assert!(!is_ffmpeg_plugin_up_to_date(&tmp));
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+}
+
+

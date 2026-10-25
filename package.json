@@ -1,0 +1,72 @@
+{
+  "name": "aideo",
+  "productName": "Aideo Music Player",
+  "description": "Modern, lightweight open-source Windows 10 & 11 desktop music player with studio-grade sound, bit-perfect WASAPI Exclusive playback, synchronized karaoke lyrics, and YouTube Music streaming.",
+  "homepage": "https://alirull18.github.io/Aideo-Music-Player/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Alirull18/Aideo-Music-Player.git"
+  },
+  "keywords": [
+    "aideo",
+    "aideo-music-player",
+    "music-player",
+    "music-player-windows",
+    "windows-music-player",
+    "windows-11",
+    "windows-10",
+    "desktop-audio-player",
+    "audiophile",
+    "wasapi",
+    "karaoke-lyrics",
+    "synchronized-lyrics",
+    "autoeq",
+    "tauri",
+    "rust",
+    "open-source"
+  ],
+  "private": true,
+  "version": "0.9.12",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "lint": "tsc --noEmit",
+    "test": "vitest run src/test",
+    "test:unit": "vitest run src/test",
+    "pack:notebooklm": "node scripts/export-notebooklm-pack.mjs",
+    "auth:notebooklm": "node scripts/auth-notebooklm.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.0",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.8.1",
+    "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.11.0",
+    "framer-motion": "^12.38.0",
+    "hls.js": "^1.7.3",
+    "lucide-react": "^1.14.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.8",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "jsdom": "^26.0.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "productName": "Aideo 中文版",
+  "identifier": "com.aideo.community.zh",
+  "plugins": {
+    "updater": {
+      "endpoints": []
+    },
+    "deep-link": {
+      "desktop": {
+        "schemes": ["aideozh"]
+      }
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}
