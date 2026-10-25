@@ -58,7 +58,7 @@ jobs:
       - name: Build unsigned Chinese edition EXE and MSI
         env:
           PROTOC: ${{ env.PROTOC }}
-        run: npm run tauri -- build --config src-tauri/tauri.zh.conf.json --bundles nsis,msi
+        run: npm run tauri -- build --config src-tauri/tauri.zh.conf.json --bundles nsis
 
       - name: Upload private run artifacts (not a public release)
         uses: actions/upload-artifact@v4
