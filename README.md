@@ -1,3 +1,21 @@
+## 项目声明 | Project Notice
+
+**中文**
+
+本项目（Aideo-ZH）是基于上游开源项目 [Aideo Music Player](https://github.com/Alirull18/Aideo-Music-Player) 修改的衍生版本，主要针对简体中文本地化、中文字体及界面显示体验进行适配与改进。
+
+本项目并非上游项目维护者发布或认可的官方中文版。上游项目的原始代码、相关版权及贡献归其各自权利人所有。本仓库的具体修改以本仓库的实际代码、提交记录和发布说明为准。
+
+使用、复制或分发本项目时，请遵守适用的开源许可证及相关要求。
+
+**English**
+
+Aideo-ZH is a derivative version of the upstream open-source project [Aideo Music Player](https://github.com/Alirull18/Aideo-Music-Player). Its primary modifications focus on Simplified Chinese localization, Chinese typography, and UI display refinements.
+
+This project is not an official Chinese edition released or endorsed by the upstream maintainers. Copyright and attribution for the original upstream code and contributions remain with their respective rights holders. The specific modifications made by this repository are documented in its source code, commit history, and release notes.
+
+Use, copying, and redistribution of this project must comply with the applicable open-source license and its requirements.
+
 # 💎 Aideo Music Player — Modern Windows Music Player (v0.9.12)
 
 **A fast, lightweight, open-source desktop music player for Windows 10 and Windows 11. Built with Rust and Tauri for bit-perfect WASAPI Exclusive sound, real-time synchronized karaoke lyrics, and a gorgeous glassmorphism interface.**
