@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StreamingQualityControl } from '../components/SettingsView';
+import { setLanguage } from '../i18n';
 
 describe('StreamingQualityControl Leader Component', () => {
+  beforeEach(() => setLanguage('en-US')); // Preserve the original English control-label assertions.
   const defaultProps = {
     streamingQuality: 'best_available' as const,
     setStreamingQuality: vi.fn(),

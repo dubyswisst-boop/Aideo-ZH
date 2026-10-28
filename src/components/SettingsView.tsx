@@ -154,6 +154,7 @@ export function StreamingQualityControl({
   qobuzConnected,
   qobuzExperimentalEnabled,
 }: StreamingQualityControlProps) {
+  const { t } = useTranslation();
   const currentIndex = STREAMING_PRESET_TIERS.findIndex(t => t.id === streamingQuality);
   const safeIndex = currentIndex >= 0 ? currentIndex : 0;
   const currentTier = STREAMING_PRESET_TIERS[safeIndex];
@@ -192,9 +193,9 @@ export function StreamingQualityControl({
 
   const getSourceDisplayName = (src: string) => {
     switch (src) {
-      case 'auto': return 'Automatic';
-      case 'local': return 'Local files';
-      case 'youtube': return 'Webstream';
+      case 'auto': return t('Automatic');
+      case 'local': return t('Local files');
+      case 'youtube': return t('Webstream');
       case 'tidal': return 'Tidal';
       case 'qobuz': return 'Qobuz';
       default: return src;
@@ -246,7 +247,7 @@ export function StreamingQualityControl({
           disabled={!canGoUp}
           whileHover={canGoUp ? { translateY: -1 } : undefined}
           whileTap={canGoUp ? { scale: 0.99 } : undefined}
-          aria-label="Increase streaming quality"
+          aria-label={t('Increase streaming quality')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -267,10 +268,10 @@ export function StreamingQualityControl({
           <ArrowUp size={13} strokeWidth={2.5} />
           <span>
             {isCustom && safeIndex === 0
-              ? `Reset to ${STREAMING_PRESET_TIERS[0].title}`
+              ? t('Reset to {quality}', { quality: t(STREAMING_PRESET_TIERS[0].title) })
               : safeIndex > 0
-                ? `Higher Quality (${STREAMING_PRESET_TIERS[safeIndex - 1].title})`
-                : 'Highest Quality Reached'}
+                ? t('Higher Quality ({quality})', { quality: t(STREAMING_PRESET_TIERS[safeIndex - 1].title) })
+                : t('Highest Quality Reached')}
           </span>
         </motion.button>
 
@@ -312,7 +313,7 @@ export function StreamingQualityControl({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 750, color: 'var(--text)' }}>
-                    {isCustom ? 'Custom Quality' : currentTier.title}
+                    {t(isCustom ? 'Custom Quality' : currentTier.title)}
                   </span>
                   <span style={{
                     fontSize: 10,
@@ -323,7 +324,7 @@ export function StreamingQualityControl({
                     color: isCustom ? '#f59e0b' : 'var(--accent)',
                     letterSpacing: 0.2,
                   }}>
-                    {isCustom ? `Base: ${currentTier.title}` : currentTier.badge}
+                    {isCustom ? t('Base: {quality}', { quality: t(currentTier.title) }) : t(currentTier.badge)}
                   </span>
                   {!isCustom && (
                     <span style={{
@@ -337,14 +338,14 @@ export function StreamingQualityControl({
                       padding: '2px 7px',
                       borderRadius: 12,
                     }}>
-                      <Check size={11} strokeWidth={2.5} /> Active
+                      <Check size={11} strokeWidth={2.5} /> {t('Active')}
                     </span>
                   )}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 3 }}>
                   {isCustom
-                    ? `Resolution: ${currentTier.badge} · Priority Source: ${getSourceDisplayName(preferredSource)}`
-                    : `Preferred target resolution: ${currentTier.badge}`}
+                    ? t('Resolution: {resolution} · Priority Source: {source}', { resolution: t(currentTier.badge), source: getSourceDisplayName(preferredSource) })
+                    : t('Preferred target resolution: {resolution}', { resolution: t(currentTier.badge) })}
                 </div>
               </div>
             </div>
@@ -353,7 +354,7 @@ export function StreamingQualityControl({
             <div
               style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 4 }}
               role="tablist"
-              aria-label="Quality preset steps"
+              aria-label={t('Quality preset steps')}
             >
               {STREAMING_PRESET_TIERS.map((tier, idx) => {
                 const isCurrent = !isCustom && safeIndex === idx;
@@ -363,7 +364,7 @@ export function StreamingQualityControl({
                     key={tier.id}
                     type="button"
                     onClick={() => selectTier(tier)}
-                    title={`Select ${tier.title}`}
+                    title={t('Select {quality}', { quality: t(tier.title) })}
                     style={{
                       width: isCurrent ? 20 : 8,
                       height: 8,
@@ -378,7 +379,7 @@ export function StreamingQualityControl({
                       cursor: 'pointer',
                       transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
-                    aria-label={`Select ${tier.title} (${idx + 1} of ${STREAMING_PRESET_TIERS.length})`}
+                    aria-label={t('Select {quality} ({index} of {total})', { quality: t(tier.title), index: idx + 1, total: STREAMING_PRESET_TIERS.length })}
                   />
                 );
               })}
@@ -395,11 +396,11 @@ export function StreamingQualityControl({
           }}>
             {isCustom ? (
               <span>
-                Manual source routing active. Remote streams target {currentTier.badge} from {currentTier.title}, while source resolution prioritizes <strong>{getSourceDisplayName(preferredSource)}</strong>. Use the arrows or preset dots above to return to a standard preset.
+                {t('Manual source routing active. Remote streams target {resolution} from {quality}, while source resolution prioritizes {source}. Use the arrows or preset dots above to return to a standard preset.', { resolution: t(currentTier.badge), quality: t(currentTier.title), source: getSourceDisplayName(preferredSource) })}
               </span>
             ) : (
               <span>
-                {currentTier.desc} Source selection requests this matching tier from remote services without DSP upsampling. Local files take priority when meeting your audio fidelity criteria.
+                {t(currentTier.desc)} {t('Source selection requests this matching tier from remote services without DSP upsampling. Local files take priority when meeting your audio fidelity criteria.')}
               </span>
             )}
           </div>
@@ -412,7 +413,7 @@ export function StreamingQualityControl({
           disabled={!canGoDown}
           whileHover={canGoDown ? { translateY: 1 } : undefined}
           whileTap={canGoDown ? { scale: 0.99 } : undefined}
-          aria-label="Decrease streaming quality"
+          aria-label={t('Decrease streaming quality')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -433,10 +434,10 @@ export function StreamingQualityControl({
           <ArrowDown size={13} strokeWidth={2.5} />
           <span>
             {isCustom && safeIndex === STREAMING_PRESET_TIERS.length - 1
-              ? `Reset to ${STREAMING_PRESET_TIERS[STREAMING_PRESET_TIERS.length - 1].title}`
+              ? t('Reset to {quality}', { quality: t(STREAMING_PRESET_TIERS[STREAMING_PRESET_TIERS.length - 1].title) })
               : safeIndex < STREAMING_PRESET_TIERS.length - 1
-                ? `Lower Quality (${STREAMING_PRESET_TIERS[safeIndex + 1].title})`
-                : 'Lowest Quality Reached'}
+                ? t('Lower Quality ({quality})', { quality: t(STREAMING_PRESET_TIERS[safeIndex + 1].title) })
+                : t('Lowest Quality Reached')}
           </span>
         </motion.button>
       </div>
@@ -469,14 +470,14 @@ export function StreamingQualityControl({
           onChange={e => setPreferredSource(e.target.value as typeof preferredSource)}
           className="settings-select"
         >
-          <option value="auto">Automatic (Smart Routing)</option>
-          <option value="local">Local files</option>
-          <option value="youtube">Webstream</option>
+          <option value="auto">{t('Automatic (Smart Routing)')}</option>
+          <option value="local">{t('Local files')}</option>
+          <option value="youtube">{t('Webstream')}</option>
           <option value="tidal" disabled={!tidalConnected}>
-            Tidal {!tidalConnected ? '(requires account connection)' : ''}
+            Tidal {!tidalConnected ? t('(requires account connection)') : ''}
           </option>
           <option value="qobuz" disabled={!qobuzConnected || !qobuzExperimentalEnabled}>
-            Qobuz {!qobuzConnected || !qobuzExperimentalEnabled ? '(requires active integration)' : ''}
+            Qobuz {!qobuzConnected || !qobuzExperimentalEnabled ? t('(requires active integration)') : ''}
           </option>
         </select>
       </div>
@@ -953,7 +954,9 @@ export function SettingsView() {
       link.href = `https://fonts.googleapis.com/css2?family=${selectedFont.replace(' ', '+')}:wght@300;400;500;600;700;800&display=swap`;
       document.head.appendChild(link);
     }
-    document.documentElement.style.setProperty('--font-family', selectedFont === 'Outfit' ? "'Outfit', sans-serif" : `'${selectedFont}', sans-serif`);
+    const latinFont = selectedFont === 'Outfit' ? "'Outfit'" : `'${selectedFont}'`;
+    const chineseFallback = "'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif";
+    document.documentElement.style.setProperty('--font-family', `${latinFont}, ${chineseFallback}`);
   }, [selectedFont]);
 
   // Apply Font Scale
@@ -1005,7 +1008,7 @@ export function SettingsView() {
     setPresetColor(preset.color);
     setPresetRgb(preset.rgb);
     window.dispatchEvent(new CustomEvent('ui-toast', { 
-      detail: { message: `Accent theme set to static preset: ${preset.name}`, type: 'success' } 
+      detail: { message: t('Accent theme set to static preset: {name}', { name: t(preset.name) }), type: 'success' }
     }));
   };
 
@@ -1125,8 +1128,8 @@ export function SettingsView() {
                   >
                     <div className="settings-chip-color" style={{ backgroundColor: theme.color }} />
                     <div className="settings-chip-info">
-                      <div className="settings-chip-name">{theme.name}</div>
-                      <div className="settings-chip-desc">{theme.description}</div>
+                      <div className="settings-chip-name">{t(theme.name)}</div>
+                      <div className="settings-chip-desc">{t(theme.description)}</div>
                     </div>
                   </div>
                 );
@@ -1238,7 +1241,7 @@ export function SettingsView() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{action.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t(action.label)}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
                     Global shortcut
                   </div>
@@ -1305,7 +1308,7 @@ export function SettingsView() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{action.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t(action.label)}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
                     Trigger action when pressed
                   </div>
@@ -1356,7 +1359,7 @@ export function SettingsView() {
                 className="btn-glass"
                 onClick={resetSidebarNavItems}
                 style={{ fontSize: 11, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, cursor: 'pointer' }}
-                title="Reset sidebar navigation items to default order and visibility"
+                title={t('Reset sidebar navigation items to default order and visibility')}
               >
                 <RotateCcw size={12} />
                 <span>Reset to Default</span>
@@ -1425,7 +1428,7 @@ export function SettingsView() {
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t(item.label)}</span>
                           {item.requiresHybrid && (
                             <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase' }}>Hybrid</span>
                           )}
@@ -1454,7 +1457,7 @@ export function SettingsView() {
                             cursor: isFirst ? 'not-allowed' : 'pointer',
                             opacity: isFirst ? 0.3 : 1
                           }}
-                          title="Move up"
+                          title={t('Move up')}
                         >
                           <ArrowUp size={13} />
                         </button>
@@ -1471,7 +1474,7 @@ export function SettingsView() {
                             cursor: isLast ? 'not-allowed' : 'pointer',
                             opacity: isLast ? 0.3 : 1
                           }}
-                          title="Move down"
+                          title={t('Move down')}
                         >
                           <ArrowDown size={13} />
                         </button>
@@ -1782,7 +1785,7 @@ export function SettingsView() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {d.icon}
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t(d.name)}</span>
                       </div>
                       <span
                         style={{
@@ -1796,11 +1799,11 @@ export function SettingsView() {
                           letterSpacing: '0.5px',
                         }}
                       >
-                        {d.badge}
+                        {t(d.badge)}
                       </span>
                     </div>
                     <p style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, margin: 0 }}>
-                      {d.desc}
+                      {t(d.desc)}
                     </p>
                   </div>
                   {isSelected && (
@@ -1935,7 +1938,7 @@ export function SettingsView() {
                   onClick={() => {
                     setTheaterHudStyle(d.id);
                     window.dispatchEvent(new CustomEvent('ui-toast', {
-                      detail: { message: `Switched Theater HUD style to ${d.name}!`, type: 'success' }
+                      detail: { message: t('Switched Theater HUD style to {name}!', { name: t(d.name) }), type: 'success' }
                     }));
                   }}
                   className={`settings-design-card ${isSelected ? 'active' : ''}`}
@@ -1969,7 +1972,7 @@ export function SettingsView() {
                           {d.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t(d.name)}</div>
                           <span style={{
                             fontSize: 9,
                             fontWeight: 700,
@@ -1980,7 +1983,7 @@ export function SettingsView() {
                             textTransform: 'uppercase',
                             letterSpacing: 0.5
                           }}>
-                            {d.badge}
+                            {t(d.badge)}
                           </span>
                         </div>
                       </div>
@@ -1995,7 +1998,7 @@ export function SettingsView() {
                       }} />
                     </div>
                     <p style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.4, margin: '6px 0 0', minHeight: 32 }}>
-                      {d.desc}
+                      {t(d.desc)}
                     </p>
                   </div>
                   {d.visual}
@@ -2074,7 +2077,7 @@ export function SettingsView() {
                         onClick={() => {
                           setCanvasMode(m.id);
                           window.dispatchEvent(new CustomEvent('ui-toast', {
-                            detail: { message: `Canvas mode set to: ${m.name}`, type: 'info' }
+                            detail: { message: t('Canvas mode set to: {name}', { name: t(m.name) }), type: 'info' }
                           }));
                         }}
                         style={{
@@ -2091,10 +2094,10 @@ export function SettingsView() {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {m.icon}
-                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{m.name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{t(m.name)}</span>
                         </div>
                         <p style={{ fontSize: 11, color: 'var(--text-dim)', margin: 0, lineHeight: 1.4 }}>
-                          {m.desc}
+                          {t(m.desc)}
                         </p>
                       </div>
                     );
@@ -2294,7 +2297,7 @@ export function SettingsView() {
                   onClick={() => {
                     setAideoPageDesign(d.id);
                     window.dispatchEvent(new CustomEvent('ui-toast', {
-                      detail: { message: `Switched Aideo home page layout to ${d.name}!`, type: 'success' }
+                      detail: { message: t('Switched Aideo home page layout to {name}!', { name: t(d.name) }), type: 'success' }
                     }));
                   }}
                   className={`settings-design-card ${isSelected ? 'active' : ''}`}
@@ -2328,7 +2331,7 @@ export function SettingsView() {
                           {d.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t(d.name)}</div>
                           <span style={{ 
                             fontSize: 9, 
                             fontWeight: 700, 
@@ -2339,7 +2342,7 @@ export function SettingsView() {
                             textTransform: 'uppercase', 
                             letterSpacing: 0.5 
                           }}>
-                            {d.badge}
+                            {t(d.badge)}
                           </span>
                         </div>
                       </div>
@@ -2355,7 +2358,7 @@ export function SettingsView() {
                     </div>
 
                     <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.4, marginTop: 6, minHeight: 32 }}>
-                      {d.desc}
+                      {t(d.desc)}
                     </div>
                   </div>
 
@@ -2433,7 +2436,7 @@ export function SettingsView() {
                   onClick={() => {
                     setLibraryDesign(d.id);
                     window.dispatchEvent(new CustomEvent('ui-toast', {
-                      detail: { message: `Switched library layout to ${d.name}!`, type: 'success' }
+                      detail: { message: t('Switched library layout to {name}!', { name: t(d.name) }), type: 'success' }
                     }));
                   }}
                   className={`settings-design-card ${isSelected ? 'active' : ''}`}
@@ -2467,7 +2470,7 @@ export function SettingsView() {
                           {d.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t(d.name)}</div>
                           <span style={{ 
                             fontSize: 9, 
                             fontWeight: 700, 
@@ -2478,7 +2481,7 @@ export function SettingsView() {
                             marginTop: 2,
                             display: 'inline-block'
                           }}>
-                            {d.badge}
+                            {t(d.badge)}
                           </span>
                         </div>
                       </div>
@@ -2494,7 +2497,7 @@ export function SettingsView() {
                     </div>
 
                     <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, marginTop: 10 }}>
-                      {d.desc}
+                      {t(d.desc)}
                     </div>
                   </div>
                 </div>
@@ -2626,7 +2629,7 @@ export function SettingsView() {
                   onClick={() => {
                     setPlayerBarDesign(d.id);
                     window.dispatchEvent(new CustomEvent('ui-toast', {
-                      detail: { message: `Switched player bar layout to ${d.name}!`, type: 'success' }
+                      detail: { message: t('Switched player bar layout to {name}!', { name: t(d.name) }), type: 'success' }
                     }));
                   }}
                   className={`settings-design-card ${isSelected ? 'active' : ''}`}
@@ -2660,7 +2663,7 @@ export function SettingsView() {
                           {d.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t(d.name)}</div>
                           <span style={{ 
                             fontSize: 9, 
                             fontWeight: 700, 
@@ -2671,7 +2674,7 @@ export function SettingsView() {
                             marginTop: 2,
                             display: 'inline-block'
                           }}>
-                            {d.badge}
+                            {t(d.badge)}
                           </span>
                         </div>
                       </div>
@@ -2689,7 +2692,7 @@ export function SettingsView() {
                     {d.visual}
 
                     <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, marginTop: 10 }}>
-                      {d.desc}
+                      {t(d.desc)}
                     </div>
                   </div>
                 </div>
@@ -2797,13 +2800,13 @@ export function SettingsView() {
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
-                  aria-label={style.name}
+                  aria-label={t(style.name)}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: visualizerMode === style.id ? 'var(--accent)' : 'var(--text)' }}>
-                    {style.name}
+                    {t(style.name)}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
-                    {style.desc}
+                    {t(style.desc)}
                   </div>
                 </button>
               ))}
@@ -2827,9 +2830,9 @@ export function SettingsView() {
                   onClick={() => setVisualizerDecayRate(decay.id as any)}
                   className={`btn ${visualizerDecayRate === decay.id ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: 11, padding: '6px 14px' }}
-                  aria-label={decay.label}
+                  aria-label={t(decay.label)}
                 >
-                  {decay.label}
+                  {t(decay.label)}
                 </button>
               ))}
             </div>
@@ -2968,7 +2971,7 @@ export function SettingsView() {
                 <button 
                   className="settings-folder-remove"
                   onClick={() => removeScanDir(dir)}
-                  title="Untrack this folder path"
+                  title={t('Untrack this folder path')}
                 >
                   <Trash2 size={12} style={{ marginRight: 4 }} /> Remove
                 </button>
@@ -3219,7 +3222,7 @@ export function SettingsView() {
                       <label style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600, display: 'block', marginBottom: 4 }}>API Key</label>
                       <input 
                         type="password" 
-                        placeholder="Paste your Jellyfin API Key..."
+                          placeholder={t('Paste your Jellyfin API Key...')}
                         value={jellyfinApiKeyInput}
                         onChange={e => setJellyfinApiKeyInput(e.target.value)}
                         className="settings-select"
@@ -3527,7 +3530,7 @@ export function SettingsView() {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       type="password"
-                      placeholder="Paste your ListenBrainz User Token..."
+                      placeholder={t('Paste your ListenBrainz User Token...')}
                       value={lbToken}
                       onChange={e => setLbToken(e.target.value)}
                       style={{
@@ -3689,18 +3692,18 @@ export function SettingsView() {
                         {profile.icon}
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'white' : 'var(--text)' }}>
-                        {profile.name}
+                        {t(profile.name)}
                       </span>
                     </div>
 
                     <p style={{ fontSize: 10, color: 'var(--text-dim)', lineHeight: 1.4, marginBottom: 12, height: 42, overflow: 'hidden' }}>
-                      {profile.desc}
+                      {t(profile.desc)}
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--glass-border)', paddingTop: 10 }}>
                       {profile.bullets.map((b, idx) => (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9 }}>
-                          <span style={{ color: 'var(--text-dim)' }}>{b.label}</span>
+                          <span style={{ color: 'var(--text-dim)' }}>{t(b.label)}</span>
                           <span style={{ 
                             fontWeight: 600, 
                             color: b.premium && active ? 'var(--accent)' : b.active ? '#10b981' : 'var(--text-dim)',
@@ -3785,7 +3788,7 @@ export function SettingsView() {
                                 transition: 'all 0.15s'
                               }}
                             >
-                              {opt.label}
+                              {t(opt.label)}
                             </button>
                           );
                         })}
@@ -3820,7 +3823,7 @@ export function SettingsView() {
                                 transition: 'all 0.15s'
                               }}
                             >
-                              {opt.label}
+                              {t(opt.label)}
                             </button>
                           );
                         })}
@@ -3855,7 +3858,7 @@ export function SettingsView() {
                                 transition: 'all 0.15s'
                               }}
                             >
-                              {opt.label}
+                              {t(opt.label)}
                             </button>
                           );
                         })}
@@ -3891,7 +3894,7 @@ export function SettingsView() {
                                 transition: 'all 0.15s'
                               }}
                             >
-                              {opt.label}
+                              {t(opt.label)}
                             </button>
                           );
                         })}
@@ -4097,7 +4100,7 @@ export function SettingsView() {
                               gap: 2
                             }}
                           >
-                            <span style={{ fontWeight: 700 }}>{opt.label}</span>
+                            <span style={{ fontWeight: 700 }}>{t(opt.label)}</span>
                             <span style={{ fontSize: 7, opacity: 0.6, letterSpacing: 0.5 }}>{opt.tag}</span>
                           </button>
                         );
@@ -4256,8 +4259,8 @@ export function SettingsView() {
                     gap: 2
                   }}
                 >
-                  <span style={{ fontWeight: 700 }}>{p.label}</span>
-                  <span style={{ fontSize: 8, opacity: 0.6 }}>{p.desc}</span>
+                  <span style={{ fontWeight: 700 }}>{t(p.label)}</span>
+                  <span style={{ fontSize: 8, opacity: 0.6 }}>{t(p.desc)}</span>
                 </button>
               ))}
             </div>
@@ -4330,7 +4333,7 @@ export function SettingsView() {
                   <button
                     key={opt.id}
                     onClick={() => setDSP({ stream_engine: opt.id as any })}
-                    title={opt.desc}
+                    title={t(opt.desc)}
                     style={{
                       flex: 1,
                       background: dsp.stream_engine === opt.id ? 'var(--glass-h)' : 'transparent',
@@ -4344,7 +4347,7 @@ export function SettingsView() {
                       transition: 'all 0.15s'
                     }}
                   >
-                    {opt.label}
+                    {t(opt.label)}
                   </button>
                 ))}
               </div>
@@ -4573,7 +4576,7 @@ export function SettingsView() {
                   onClick={() => {
                     setRecommendationEngine(engine.id as any);
                     window.dispatchEvent(new CustomEvent('ui-toast', { 
-                      detail: { message: `Recommendation engine set to: ${engine.label}`, type: 'success' } 
+                      detail: { message: t('Recommendation engine set to: {name}', { name: t(engine.label) }), type: 'success' }
                     }));
                   }}
                   whileHover={{ scale: 1.02 }}
@@ -4608,14 +4611,14 @@ export function SettingsView() {
                       background: 'rgba(var(--accent-rgb), 0.25)',
                       color: 'var(--accent)'
                     }}>
-                      {engine.badge}
+                      {t(engine.badge)}
                     </span>
                   )}
                   <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'white' : 'var(--text-dim)', transition: 'color 0.2s' }}>
-                    {engine.label}
+                    {t(engine.label)}
                   </span>
                   <span style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.3, display: 'block', opacity: active ? 0.9 : 0.6 }}>
-                    {engine.desc}
+                    {t(engine.desc)}
                   </span>
                 </motion.div>
               );
@@ -4660,7 +4663,7 @@ export function SettingsView() {
                   onClick={() => {
                     setAutoplayDiscoveryLevel(level.id as any);
                     window.dispatchEvent(new CustomEvent('ui-toast', { 
-                      detail: { message: `Discovery Taste Profile set to: ${level.label}`, type: 'success' } 
+                      detail: { message: t('Discovery Taste Profile set to: {name}', { name: t(level.label) }), type: 'success' }
                     }));
                   }}
                   whileHover={{ scale: 1.02 }}
@@ -4682,10 +4685,10 @@ export function SettingsView() {
                   }}
                 >
                   <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'white' : 'var(--text-dim)', transition: 'color 0.2s' }}>
-                    {level.label}
+                    {t(level.label)}
                   </span>
                   <span style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.3, display: 'block', opacity: active ? 0.9 : 0.6 }}>
-                    {level.desc}
+                    {t(level.desc)}
                   </span>
                 </motion.div>
               );
@@ -5042,7 +5045,7 @@ export function SettingsView() {
             )}
             {updaterStoreStatus === 'error' && updaterStoreError && (
               <div className="settings-update-status-msg" style={{ background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.3)', marginTop: 16, fontSize: 12, color: '#f87171' }}>
-                Error checking updates: {updaterStoreError}
+                {t('Error checking updates: {error}', { error: updaterStoreError })}
               </div>
             )}
           </div>
@@ -5068,6 +5071,8 @@ export function SettingsView() {
     return settingsItems.filter(item => 
       item.title.toLowerCase().includes(q) || 
       item.description.toLowerCase().includes(q) || 
+      t(item.title).toLowerCase().includes(q) ||
+      t(item.description).toLowerCase().includes(q) ||
       item.keywords.includes(q)
     );
   };
@@ -5239,8 +5244,8 @@ export function SettingsView() {
               {filteredItems.map((item) => (
                 <div key={item.id} className="settings-card-wrapper">
                   <div className="settings-row-meta">
-                    <h2 className="settings-row-title">{item.title}</h2>
-                    <p className="settings-row-desc">{item.description}</p>
+                    <h2 className="settings-row-title">{t(item.title)}</h2>
+                    <p className="settings-row-desc">{t(item.description)}</p>
                   </div>
                   <div className="settings-row-control-area">
                     {item.element}
@@ -5252,7 +5257,7 @@ export function SettingsView() {
                 <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-dim)' }}>
                   <HelpCircle size={40} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.5 }} />
                   <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>No settings found</div>
-                  <div>No settings matched your query "{searchQuery}". Try a different keyword.</div>
+                  <div>{t('No settings matched your query "{query}". Try a different keyword.', { query: searchQuery })}</div>
                 </div>
               )}
             </motion.div>
@@ -5266,6 +5271,7 @@ export function SettingsView() {
 }
 
 function DependencyManagerPanel() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<any>(null);
   const [downloads, setDownloads] = useState<any>({});
 
@@ -5357,7 +5363,7 @@ function DependencyManagerPanel() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ flex: 1, paddingRight: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="settings-ctrl-title">{dep.name}</span>
+                  <span className="settings-ctrl-title">{t(dep.name)}</span>
                   {dep.installed ? (
                     <span style={{ fontSize: 9, background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>
                       INSTALLED ({formatSize(dep.size)})
@@ -5372,7 +5378,7 @@ function DependencyManagerPanel() {
                     </span>
                   )}
                 </div>
-                <div className="settings-ctrl-desc" style={{ marginTop: 4 }}>{dep.desc}</div>
+                <div className="settings-ctrl-desc" style={{ marginTop: 4 }}>{t(dep.desc)}</div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
