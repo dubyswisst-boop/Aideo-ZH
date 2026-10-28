@@ -65,4 +65,12 @@ describe('Aideo language packs', () => {
     expect(t('toString')).toBe('toString');
     expect(t('constructor')).toBe('constructor');
   });
+
+  it('ignores overrides that lose interpolation values', async () => {
+    vi.mocked(invoke).mockResolvedValue({ 'Hello, {name}': '你好，{other}', Settings: '偏好' });
+    const { reloadLanguagePack, t } = await loadI18n();
+    await reloadLanguagePack();
+    expect(t('Hello, {name}', { name: 'Library' })).toBe('Hello, Library');
+    expect(t('Settings')).toBe('偏好');
+  });
 });

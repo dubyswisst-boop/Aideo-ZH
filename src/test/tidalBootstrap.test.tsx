@@ -6,6 +6,7 @@ import App from '../App';
 import { useStore } from '../store';
 import type { Track } from '../store/types';
 import { clearRecentToasts } from '../components/Toast';
+import { setLanguage } from '../i18n';
 
 const realStopTrack = useStore.getState().stopTrack;
 
@@ -36,6 +37,10 @@ if (!(window as any).ResizeObserver) {
 }
 
 beforeEach(() => {
+  // Keep provider lifecycle assertions independent of the user's language.
+  setLanguage('en-US');
+  // Idle chunk prefetch is unrelated to these IPC tests and can outlive jsdom.
+  vi.stubGlobal('requestIdleCallback', vi.fn(() => 0));
   vi.clearAllMocks();
   useStore.setState({ tidalConnected: false } as any);
 });
@@ -43,6 +48,7 @@ beforeEach(() => {
 afterEach(() => {
   clearRecentToasts();
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe('Tidal session restoration on app boot', () => {

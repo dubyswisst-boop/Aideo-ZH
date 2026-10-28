@@ -10,10 +10,12 @@ import { activeDownload, canCancelDownload, collectDownloadSources, trackFromDow
 import { searchSources, sourceKey, sourceName, sourceSearchQuery } from '../utils/unifiedSources';
 import { fmt } from '../utils';
 import defaultCover from '../assets/default_cover.png';
+import { useTranslation, translateNotification } from '../i18n';
 
 const reportError = (error: unknown) => window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: String(error), type: 'error', title: 'Download' } }));
 
 export function DownloadProgress({ job, notification = false }: { job: DownloadJob; notification?: boolean }) {
+  const { t } = useTranslation();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const retry = async () => {
@@ -40,8 +42,8 @@ export function DownloadProgress({ job, notification = false }: { job: DownloadJ
     finally { setBusy(false); }
   };
   const bytes = `${(job.downloaded / (1024 * 1024)).toFixed(1)} MB`;
-  const status = job.status === 'downloading' ? job.percent == null ? `Downloading · ${bytes}` : `Downloading · ${Math.floor(job.percent)}% · ${bytes}`
-    : ({ preparing: 'Preparing download…', cancelling: 'Cancelling…', finalizing: 'Saving file and adding to library…', completed: 'Completed · 100%', cancelled: 'Cancelled', recoverable: 'Interrupted · ready to retry', failed: job.saved ? 'Saved · library import failed' : 'Download failed' })[job.status];
+  const status = job.status === 'downloading' ? job.percent == null ? t('Downloading · {bytes}', { bytes }) : t('Downloading · {percent}% · {bytes}', { percent: Math.floor(job.percent), bytes })
+    : ({ preparing: t('Preparing download…'), cancelling: t('Cancelling…'), finalizing: t('Saving file and adding to library…'), completed: t('Completed · 100%'), cancelled: t('Cancelled'), recoverable: t('Interrupted · ready to retry'), failed: job.saved ? t('Saved · library import failed') : t('Download failed') })[job.status];
   return <article className="download-job" aria-label={`Download: ${job.source.metadata?.title || 'Unknown Title'}`}>
     <div className="download-job-heading">
       {notification && <img className="download-job-cover" src={job.source.metadata?.cover_url || defaultCover} alt="" onError={event => { event.currentTarget.src = defaultCover; }} />}
@@ -55,7 +57,7 @@ export function DownloadProgress({ job, notification = false }: { job: DownloadJ
       {!activeDownload(job) && <button type="button" disabled={busy} onClick={() => void discard()}>Discard</button>}
       {job.status === 'failed' && <button type="button" onClick={() => useDownloadStore.getState().open(trackFromDownloadSource(job.source))}>Choose another copy</button>}
     </div>
-    {(error || job.error) && <p className="download-error" role="alert">{error || job.error}</p>}
+    {(error || job.error) && <p className="download-error" role="alert">{translateNotification(error || job.error || '')}</p>}
     {!notification && <small className="download-path">{job.option.label}<br />{job.path}</small>}
   </article>;
 }

@@ -11,6 +11,7 @@ import { useStore } from '../store';
 import { collectDownloadSources, useDownloadStore, type DownloadJob, type DownloadOption } from '../store/downloadStore';
 import type { PlaybackSource, Track } from '../store/types';
 import { searchSources, type SourceSearch } from '../utils/unifiedSources';
+import { setLanguage } from '../i18n';
 
 vi.mock('../utils/unifiedSources', async importOriginal => ({ ...await importOriginal<typeof import('../utils/unifiedSources')>(), searchSources: vi.fn() }));
 
@@ -24,6 +25,8 @@ const emptySearch: SourceSearch = { tracks: [], pending: [], errors: {} };
 const handlers = new Map<string, (event: { payload: DownloadJob }) => void>();
 
 beforeEach(() => {
+  // Download workflow assertions use English; Chinese progress has dedicated tests.
+  setLanguage('en-US');
   cleanup(); vi.clearAllMocks(); handlers.clear();
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value() { this.setAttribute('open', ''); } });
   useDownloadStore.setState({ track: null, jobs: [], paths: [], hidden: [] });

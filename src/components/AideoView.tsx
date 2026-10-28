@@ -4,6 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { useTranslation } from '../i18n';
+import { mixDisplayTitle } from './aideo/mixPresentation';
 import { Sparkles, History, Compass, Play, Pause, Music, Star, Moon, Download, Check, Loader2, RefreshCw, LayoutGrid, List, Search, X, ArrowLeft, Layers, Flame, Disc, RotateCcw, Zap, Clock, ListMusic, CloudRain, Target, Waves, Headphones, Activity, BookOpen, ChevronDown, MoreVertical } from 'lucide-react';
 import { YoutubeMix } from '../store/types';
 import './aideo/home.css';
@@ -404,6 +406,7 @@ const TrackCardThumbnail = memo(({
 });
 
 export function AideoView() {
+  const { t } = useTranslation();
   const {
     tracks,
     playHistory,
@@ -1894,7 +1897,7 @@ export function AideoView() {
                   {renderIcon()}
                 </div>
                 <div className="mix-card-text">
-                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{mix.title}</h3>
+                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{mixDisplayTitle(mix, t)}</h3>
                   <p>{mix.description}</p>
                 </div>
                 <button className="mix-play-btn" title={`Play ${mix.title}`}>
@@ -2421,7 +2424,7 @@ export function AideoView() {
                     onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--glass-h)'; }}
                     onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'var(--glass)'; }}
                   >
-                    {m}
+                    {t(m)}
                   </button>
                 );
               })}
@@ -2452,7 +2455,7 @@ export function AideoView() {
                     onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--glass-h)'; }}
                     onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'var(--glass)'; }}
                   >
-                    {s}
+                    {t(s)}
                   </button>
                 );
               })}
@@ -2605,7 +2608,7 @@ export function AideoView() {
   };
 
   const aideoHomeProps: AideoHomeProps = {
-    greeting,
+    greeting: t(greeting),
     trackCount: tracks.length,
     totalPlays,
     discoveryData,
@@ -3582,7 +3585,7 @@ export function AideoView() {
                     transition={{ duration: 0.5 }}
                     className="aideo-title"
                   >
-                    {greeting}
+                    {t(greeting)}
                   </motion.h1>
                   <p className="aideo-subtitle">Your library, listening history, and recommendations.</p>
                 </div>

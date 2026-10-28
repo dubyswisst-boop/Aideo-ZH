@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { ToastAction, ToastType } from '../utils/toast';
+import { useTranslation, translateNotification } from '../i18n';
 
 export interface ToastMessage {
   id: string;
@@ -122,6 +123,7 @@ interface ToastCardProps {
 }
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
+  const { t } = useTranslation();
   const [isPaused, setIsPaused] = useState(false);
   const [remainingTime, setRemainingTime] = useState(toast.duration);
   const startTimeRef = useRef<number>(Date.now());
@@ -233,7 +235,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
                 letterSpacing: '-0.01em',
               }}
             >
-              {defaultTitle}
+              {t(defaultTitle)}
             </span>
           </div>
 
@@ -245,7 +247,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
               wordBreak: 'break-word',
             }}
           >
-            {toast.message}
+            {translateNotification(toast.message)}
           </div>
 
           {toast.isDiagnostic && toast.technicalDetail && (
@@ -291,7 +293,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
                 onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
                 onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
               >
-                {toast.action.label}
+                {t(toast.action.label)}
               </button>
             </div>
           )}

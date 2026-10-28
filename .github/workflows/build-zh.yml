@@ -55,7 +55,7 @@ jobs:
           cargo check --manifest-path src-tauri/Cargo.toml
           cargo test --manifest-path src-tauri/Cargo.toml
 
-      - name: Build unsigned Chinese edition EXE and MSI
+      - name: Build unsigned Chinese edition NSIS EXE
         env:
           PROTOC: ${{ env.PROTOC }}
         run: npm run tauri -- build --config src-tauri/tauri.zh.conf.json --bundles nsis

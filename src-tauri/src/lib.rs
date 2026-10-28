@@ -3768,7 +3768,7 @@ async fn toggle_desktop_lyrics(show: bool, app_handle: AppHandle) -> Result<bool
                 "desktop-lyrics",
                 tauri::WebviewUrl::App("index.html?window=desktop-lyrics".into()),
             )
-            .title("Aideo Desktop Lyrics")
+            .title(localization::native_text("Aideo Desktop Lyrics"))
             .inner_size(880.0, 140.0)
             .transparent(true)
             .decorations(false)
@@ -4192,14 +4192,14 @@ pub fn run() {
             let _ = (|| -> Result<(), Box<dyn std::error::Error>> {
                 use tauri::menu::{Menu, MenuItem};
 
-                let show_i = MenuItem::with_id(app, "show", "Show Aideo", true, None::<&str>)?;
-                let quit_i = MenuItem::with_id(app, "quit", "Quit Aideo", true, None::<&str>)?;
+                let show_i = MenuItem::with_id(app, "show", localization::native_text("Show Aideo"), true, None::<&str>)?;
+                let quit_i = MenuItem::with_id(app, "quit", localization::native_text("Quit Aideo"), true, None::<&str>)?;
                 let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
                 if let Some(tray) = app.tray_by_id("main-tray") {
                     let _ = tray.set_menu(Some(menu));
                     let _ = tray.set_show_menu_on_left_click(false);
-                    let _ = tray.set_tooltip(Some("Aideo Music Player"));
+                    let _ = tray.set_tooltip(Some(localization::native_text("Aideo Music Player")));
                 }
 
                 Ok(())

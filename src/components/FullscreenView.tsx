@@ -43,6 +43,7 @@ import { TheaterLayoutSwitch } from './theater/TheaterLayoutSwitch';
 import { TheaterQueueDrawer } from './theater/TheaterQueueDrawer';
 import { TheaterSignalPathModal } from './theater/TheaterSignalPathModal';
 import { getAudioPathPresentation } from '../utils/audioPath';
+import { useTranslation } from '../i18n';
 
 const THEATER_NAMES: Record<TheaterModeDesign, string> = {
   stage: 'Stage View',
@@ -61,6 +62,7 @@ export const THEATER_HUD_NAMES: Record<TheaterHudStyle, string> = {
 };
 
 export function FullscreenView() {
+  const { t } = useTranslation();
   const {
     isMuted,
     toggleMute,
@@ -567,7 +569,7 @@ export function FullscreenView() {
           title={`HUD: ${THEATER_HUD_NAMES[theaterHudStyle]} (Click or press H to cycle style)`}
         >
           <Sliders size={16} />
-          <span>{THEATER_HUD_NAMES[theaterHudStyle]}</span>
+          <span>{t(THEATER_HUD_NAMES[theaterHudStyle])}</span>
         </button>
 
         {/* Floating Layout Toggle */}
@@ -581,7 +583,7 @@ export function FullscreenView() {
           title={`Current: ${THEATER_NAMES[theaterModeDesign]} (Click or press L to change layout)`}
         >
           <LayoutGrid size={16} />
-          <span>{THEATER_NAMES[theaterModeDesign]}</span>
+          <span>{t(THEATER_NAMES[theaterModeDesign])}</span>
         </button>
 
         {/* Floating Exit Button */}

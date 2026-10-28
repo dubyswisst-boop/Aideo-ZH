@@ -1,6 +1,7 @@
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { Layers, Zap, Sparkles, Check } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 export type OutputPathOption = 'shared' | 'exclusive' | 'bitperfect';
 
@@ -9,6 +10,7 @@ interface AudioOutputPathSelectorProps {
 }
 
 export function AudioOutputPathSelector({ compact = false }: AudioOutputPathSelectorProps) {
+  const { t } = useTranslation();
   const {
     playbackExclusive,
     playbackBitPerfect,
@@ -170,7 +172,7 @@ export function AudioOutputPathSelector({ compact = false }: AudioOutputPathSele
                       color: isSelected ? '#fff' : 'var(--text-dim)',
                     }}
                   >
-                    {opt.badgeLabel}
+                    {t(opt.badgeLabel)}
                   </span>
                 </div>
 
@@ -204,7 +206,7 @@ export function AudioOutputPathSelector({ compact = false }: AudioOutputPathSele
                   marginBottom: 6,
                 }}
               >
-                {opt.title}
+                {t(opt.title)}
               </div>
 
               {/* Detailed Description */}

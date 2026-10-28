@@ -5,9 +5,12 @@ import { ToastContainer, clearRecentToasts } from '../components/Toast';
 import { scheduleOsTrackNotification, cancelOsTrackNotification } from '../utils/notifications';
 import { sendNotification } from '@tauri-apps/plugin-notification';
 import { useStore } from '../store';
+import { setLanguage } from '../i18n';
 
 describe('Toast Notification System Overhaul', () => {
   beforeEach(() => {
+    // This suite checks English diagnostic formatting; Chinese has dedicated tests.
+    setLanguage('en-US');
     vi.useFakeTimers();
     useStore.setState({
       notificationsEnabled: true,

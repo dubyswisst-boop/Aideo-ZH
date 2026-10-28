@@ -8,6 +8,42 @@ use tauri::Manager;
 
 const MAX_LANGUAGE_PACK_BYTES: usize = 2 * 1024 * 1024;
 
+/// Native presentation shares the checked-in dictionary; no backend state changes.
+pub fn native_text(source: &str) -> String {
+    static DICTIONARY: std::sync::OnceLock<HashMap<String, String>> = std::sync::OnceLock::new();
+    DICTIONARY.get_or_init(|| serde_json::from_str(include_str!("../../locales/zh-CN.json")).unwrap_or_default())
+        .get(source).cloned().unwrap_or_else(|| source.to_owned())
+}
+
+/// Translate rendered remote markup only. PINs, commands and the wire sentinel
+/// "Not Playing" retain their original values.
+pub fn localize_remote_markup(mut html: String) -> String {
+    html = html.replace("<html lang=\"en\">", "<html lang=\"zh-CN\">");
+    for source in [
+        "Aideo Connect — Pairing", "Aideo Connect Remote", "Connect Player",
+        "Enter the 6-digit PIN displayed on your Aideo desktop player to connect.",
+        "Check Aideo Settings &rarr; System &rarr; Aideo Connect Remote for your PIN.",
+        "Connecting...", "🎵 Now Playing", "📜 Live Lyrics", "Not Playing",
+        "Connecting to desktop player...", "Aideo Companion", "No synchronized lyrics available",
+        "Instrumental or No Synced Lyrics", "Resume Sync &darr;",
+    ] {
+        html = html.replace(&format!(">{source}<"), &format!(">{}<", native_text(source)));
+    }
+    // The resume button has indentation around its label.
+    html = html.replace("Resume Sync &darr;", &native_text("Resume Sync &darr;"));
+    for source in ["Shuffle", "Previous", "Play/Pause", "Next", "Repeat", "Mute"] {
+        html = html.replace(&format!("title=\"{source}\""), &format!("title=\"{}\"", native_text(source)));
+    }
+    for source in ["Connecting...", "Connected", "Offline", "Invalid or expired PIN. Please check Aideo player for the current PIN."] {
+        let translated = serde_json::to_string(&native_text(source)).unwrap();
+        html = html.replace(&format!(".textContent = '{source}'"), &format!(".textContent = {translated}"));
+    }
+    let idle = serde_json::to_string(&native_text("Not Playing")).unwrap();
+    html = html.replace("data.title || 'Not Playing'", &format!("(data.title === 'Not Playing' ? {idle} : data.title || {idle})"));
+    html
+}
+
+
 fn read_pack_from(install_dir: &Path) -> Result<Option<HashMap<String, String>>, String> {
     let file_path = install_dir.join("locales").join("zh-CN.json");
     let file = match std::fs::File::open(&file_path) {
@@ -42,6 +78,16 @@ pub fn read_language_pack(app: tauri::AppHandle) -> Result<Option<HashMap<String
 mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn remote_presentation_preserves_protocol_and_metadata() {
+        let html = localize_remote_markup("<html lang=\"en\"><button title=\"Play/Pause\">Connect Player</button><script>send('play'); title.textContent = data.title || 'Not Playing'; if (data.title === 'Not Playing') stop();</script>".to_owned());
+        assert!(html.contains("lang=\"zh-CN\""));
+        assert!(html.contains("连接播放器"));
+        assert!(html.contains("send('play')"));
+        assert!(html.contains("if (data.title === 'Not Playing') stop()"));
+        assert!(html.contains("未在播放"));
+    }
 
     fn temporary_install_dir() -> std::path::PathBuf {
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();

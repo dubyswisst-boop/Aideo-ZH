@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, X } from 'lucide-react';
+import { useTranslation, translateNotification } from '../i18n';
 
 export function AideoPrompt({ title, placeholder, initialValue = '', actionLabel, onClose, onSubmit }: {
   title: string,
@@ -10,6 +11,7 @@ export function AideoPrompt({ title, placeholder, initialValue = '', actionLabel
   onClose: () => void,
   onSubmit: (v: string) => void
 }) {
+  const { t } = useTranslation();
   const [val, setVal] = useState(initialValue);
 
   return (
@@ -30,16 +32,16 @@ export function AideoPrompt({ title, placeholder, initialValue = '', actionLabel
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 12 }}>
             <Activity size={20} color="var(--accent)" />
-            {title}
+            {translateNotification(title)}
           </h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close dialog"><X size={20} /></button>
+          <button className="modal-close" onClick={onClose} aria-label={t('Close dialog')}><X size={20} /></button>
         </div>
 
         <div style={{ marginBottom: 24 }}>
           <input
             autoFocus
             type="text"
-            placeholder={placeholder}
+            placeholder={t(placeholder)}
             value={val}
             onChange={e => setVal(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { onSubmit(val); onClose(); } }}
@@ -58,9 +60,9 @@ export function AideoPrompt({ title, placeholder, initialValue = '', actionLabel
         </div>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
           <button className="btn btn-primary" onClick={() => { onSubmit(val); onClose(); }}>
-            {actionLabel}
+            {t(actionLabel)}
           </button>
         </div>
       </motion.div>

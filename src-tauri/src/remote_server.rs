@@ -759,7 +759,7 @@ self.addEventListener('fetch', (event) => {
 }
 
 fn get_pin_entry_html() -> String {
-    r###"<!DOCTYPE html>
+    crate::localization::localize_remote_markup(r###"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -988,11 +988,11 @@ fn get_pin_entry_html() -> String {
 </body>
 </html>
 "###
-    .to_string()
+    .to_string())
 }
 
 fn get_remote_html() -> String {
-    r###"<!DOCTYPE html>
+    crate::localization::localize_remote_markup(r###"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1996,7 +1996,7 @@ fn get_remote_html() -> String {
 </body>
 </html>
 "###
-    .to_string()
+    .to_string())
 }
 
 #[cfg(test)]
