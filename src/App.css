@@ -10295,3 +10295,85 @@ html[lang="zh-CN"] .library-search-input {
 .app.sidebar-auto-hidden.theater-active .app-sidebar { display: none; }
 .app.sidebar-auto-hidden.theater-active .app-main { grid-column: 1; }
 .app.theater-active .window-chrome { display: none; }
+
+/* Aideo-ZH V10 Stage 1: compact icon rail and floating expansion.
+   Avoid reflow when the rail expands and keep Settings above the player bar. */
+.app.sidebar-auto-hidden {
+  grid-template-columns: 58px minmax(0, 1fr) !important;
+}
+.app.sidebar-auto-hidden .app-sidebar {
+  position: absolute;
+  left: 0;
+  top: 34px;
+  bottom: var(--player-h, 96px);
+  height: auto;
+  width: 58px;
+  max-width: none;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+  overflow: hidden;
+  z-index: 2401;
+  box-sizing: border-box;
+  transition: width 180ms ease, box-shadow 180ms ease;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .app-sidebar {
+  width: min(270px, 85vw);
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+  overflow-y: auto;
+  box-shadow: 12px 0 36px rgba(0,0,0,.48);
+}
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .sidebar-logo-name,
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .sidebar-section,
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .nav-item span {
+  display: none !important;
+}
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .nav-item {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .sidebar-logo {
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.app.sidebar-auto-hidden:not(.sidebar-auto-visible) .app-sidebar .sidebar-toggle-btn {
+  margin: 0 auto;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .app-sidebar .nav-item {
+  pointer-events: auto;
+}
+.app.sidebar-auto-hidden .sidebar-hover-zone {
+  width: 58px;
+  top: 34px;
+  bottom: var(--player-h, 96px);
+  z-index: 2400;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .sidebar-hover-zone {
+  pointer-events: none;
+}
+.app.sidebar-auto-hidden.theater-active {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.app.sidebar-auto-hidden.theater-active .app-sidebar,
+.app.sidebar-auto-hidden.theater-active .sidebar-hover-zone { display: none; }
+/* Keep the existing, separately positioned window buttons accessible. */
+.window-chrome { z-index: 2500; }
+/* Simplified Chinese typography: offline system stack, no bundled font assets. */
+html[lang="zh-CN"] body,
+html[lang="zh-CN"] button,
+html[lang="zh-CN"] input,
+html[lang="zh-CN"] select,
+html[lang="zh-CN"] textarea {
+  font-family: "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+}
