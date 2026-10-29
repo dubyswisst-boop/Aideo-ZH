@@ -1,0 +1,589 @@
+[
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/App.tsx",
+      "import './App.css';",
+      "import './App.css';\nimport { WindowChrome } from './components/WindowChrome';",
+      "导入无边框窗口控件",
+      "import { WindowChrome } from './components/WindowChrome';"
+    ],
+    "line": 82
+  },
+  {
+    "type": "insertAfterOnce",
+    "args": [
+      "src/App.tsx",
+      "  const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);",
+      "\n  const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);",
+      "const [sidebarAutoVisible, setSidebarAutoVisible]",
+      "侧边栏自动隐藏状态"
+    ],
+    "line": 89
+  },
+  {
+    "type": "insertAfterOnce",
+    "args": [
+      "src/App.tsx",
+      "  const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);",
+      "\n\n  useEffect(() => {\n    const blockLockedTheaterInput = (event: KeyboardEvent) => {\n      if (localStorage.getItem('aideo-theater-locked') !== 'true') return;\n      event.preventDefault();\n      event.stopImmediatePropagation();\n    };\n    window.addEventListener('keydown', blockLockedTheaterInput, true);\n    return () => window.removeEventListener('keydown', blockLockedTheaterInput, true);\n  }, []);",
+      "blockLockedTheaterInput",
+      "锁定时拦截应用内键盘输入"
+    ],
+    "line": 96
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/App.tsx",
+      "      <div className={`${lowSpecMode ? \"app low-spec\" : \"app\"} ${sidebarCollapsed ? \"sidebar-collapsed\" : \"\"} ${isLightTheme ? \"light-theme\" : \"\"} playerbar-${playerBarDesign} ${playerBarTransparent ? \"playerbar-transparent\" : \"\"}`}>\n        <Sidebar />\n      <main className=\"app-main\">",
+      "      <div className={`${lowSpecMode ? \"app low-spec\" : \"app\"} ${sidebarCollapsed ? \"sidebar-collapsed\" : \"\"} ${isLightTheme ? \"light-theme\" : \"\"} playerbar-${playerBarDesign} ${playerBarTransparent ? \"playerbar-transparent\" : \"\"} sidebar-auto-hidden ${sidebarAutoVisible ? \"sidebar-auto-visible\" : \"\"} ${view === \"fullscreen\" ? \"theater-active\" : \"\"}`}>\n        <div className=\"sidebar-hover-zone\" onMouseEnter={() => setSidebarAutoVisible(true)} aria-hidden=\"true\" />\n        <Sidebar onMouseLeave={() => setSidebarAutoVisible(false)} />\n        {view !== \"fullscreen\" && <WindowChrome />}\n      <main className=\"app-main\">",
+      "主布局：自动隐藏侧边栏及窗口控件",
+      "sidebar-auto-hidden"
+    ],
+    "line": 103
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/Sidebar.tsx",
+      "export function Sidebar() {",
+      "export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {",
+      "侧边栏增加鼠标离开回调",
+      "export function Sidebar({ onMouseLeave }"
+    ],
+    "line": 111
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/Sidebar.tsx",
+      "<aside className=\"app-sidebar\">",
+      "<aside className=\"app-sidebar\" onMouseLeave={onMouseLeave}>",
+      "侧边栏离开时自动收起",
+      "<aside className=\"app-sidebar\" onMouseLeave={onMouseLeave}>"
+    ],
+    "line": 118
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/LyricsPanel.tsx",
+      "      const r: SearchResult[] = await invoke('search_lyrics_online', { query });",
+      "      const r: SearchResult[] = await invoke('search_lyrics_online', {\n        query,\n        title: cleanTitle || undefined,\n        artist: cleanArtist || undefined,\n        album: currentTrack?.album || undefined,\n        duration: currentTrack?.duration || undefined,\n      });",
+      "歌词搜索传入独立曲名/歌手/专辑/时长",
+      "title: cleanTitle || undefined"
+    ],
+    "line": 127
+  },
+  {
+    "type": "replaceInRegion",
+    "args": [
+      "src-tauri/src/lib.rs",
+      "async fn search_lyrics_online(",
+      "\n#[tauri::command]",
+      "std::time::Duration::from_millis(3500)",
+      "std::time::Duration::from_secs(12)",
+      "歌词搜索超时从 3.5 秒增加到 12 秒",
+      "std::time::Duration::from_secs(12)"
+    ],
+    "line": 135
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/lib.rs",
+      "                            results.push(SearchResult {\n                                id: format!(\"binilyrics-{}\", item[\"id\"].as_str().unwrap_or(\"item\")),\n                                title: if track_name.is_empty() { bini_song_fallback.clone() } else { track_name },\n                                artist: artist_name,\n                                source: \"BiniLyrics\".to_string(),\n                                synced: true,\n                                content_id: Some(lyrics_url),\n                                raw_lrc: raw_ttml,\n                                duration: dur,\n                            });\n                            if timing == \"word\" {\n                                break;\n                            }",
+      "                            // Only offer a result when the actual lyric payload was fetched.\n                            // Otherwise the UI may show a match that cannot be downloaded later.\n                            if let Some(raw_ttml) = raw_ttml {\n                                results.push(SearchResult {\n                                    id: format!(\"binilyrics-{}\", item[\"id\"].as_str().unwrap_or(\"item\")),\n                                    title: if track_name.is_empty() { bini_song_fallback.clone() } else { track_name },\n                                    artist: artist_name,\n                                    source: \"BiniLyrics\".to_string(),\n                                    synced: true,\n                                    content_id: Some(lyrics_url),\n                                    raw_lrc: Some(raw_ttml),\n                                    duration: dur,\n                                });\n                                if timing == \"word\" {\n                                    break;\n                                }\n                            }",
+      "移除无法下载的 BiniLyrics 假匹配",
+      "Only offer a result when the actual lyric payload was fetched"
+    ],
+    "line": 175
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "const API_URL: &str = \"https://ws.audioscrobbler.com/2.0/\";",
+      "const API_URL: &str = \"https://ws.audioscrobbler.com/2.0/\";\n\nfn validate_api_credentials(require_secret: bool) -> Result<(), String> {\n    let key = get_api_key();\n    if key.trim().is_empty() || key == \"YOUR_LASTFM_API_KEY\" {\n        return Err(\"Last.fm API 密钥未配置。请配置 LASTFM_API_KEY 后重新构建。\".to_string());\n    }\n    if require_secret {\n        let secret = get_api_secret();\n        if secret.trim().is_empty() || secret == \"YOUR_LASTFM_API_SECRET\" {\n            return Err(\"Last.fm API Secret 未配置。请配置 LASTFM_API_SECRET 后重新构建。\".to_string());\n        }\n    }\n    Ok(())\n}",
+      "Last.fm 凭据缺失时给出明确提示",
+      "fn validate_api_credentials"
+    ],
+    "line": 178
+  },
+  {
+    "type": "replaceAllExact",
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "let client = Client::new();",
+      "let client = crate::get_http_client();",
+      "Last.fm 使用共享网络客户端",
+      "let client = crate::get_http_client();",
+      6
+    ],
+    "line": 199
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.0,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn get_auth_token() -> Result<String, String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn get_auth_token() -> Result<String, String> {\n        validate_api_credentials(true)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn get_auth_token() -> Result<String, String> {",
+      "Last.fm guard pub async fn get_auth_token() -> Result<String, String> {"
+    ]
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.01,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn get_session(token: &str) -> Result<String, String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn get_session(token: &str) -> Result<String, String> {\n        validate_api_credentials(true)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn get_session(token: &str) -> Result<String, String> {",
+      "Last.fm guard pub async fn get_session(token: &str) -> Result<String, String> {"
+    ]
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.02,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {\n        validate_api_credentials(true)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {",
+      "Last.fm guard pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {"
+    ]
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.03,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn get_user_info(session_key: &str) -> Result<Value, String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn get_user_info(session_key: &str) -> Result<Value, String> {\n        validate_api_credentials(false)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn get_user_info(session_key: &str) -> Result<Value, String> {",
+      "Last.fm guard pub async fn get_user_info(session_key: &str) -> Result<Value, String> {"
+    ]
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.04,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {\n        validate_api_credentials(false)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {",
+      "Last.fm guard pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {"
+    ]
+  },
+  {
+    "type": "insertAfterOnce",
+    "line": 234.05,
+    "args": [
+      "src-tauri/src/lastfm.rs",
+      "pub async fn get_top_artists(username: &str) -> Result<Value, String> {\n",
+      "    // Aideo-ZH feature patch credential guard: pub async fn get_top_artists(username: &str) -> Result<Value, String> {\n        validate_api_credentials(false)?;\n",
+      "// Aideo-ZH feature patch credential guard: pub async fn get_top_artists(username: &str) -> Result<Value, String> {",
+      "Last.fm guard pub async fn get_top_artists(username: &str) -> Result<Value, String> {"
+    ]
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/lastfm_api.rs",
+      "const API_URL: &str = \"https://ws.audioscrobbler.com/2.0/\";",
+      "const API_URL: &str = \"https://ws.audioscrobbler.com/2.0/\";\n\nfn validate_api_key() -> Result<(), String> {\n    let key = get_api_key();\n    if key.trim().is_empty() || key == \"YOUR_LASTFM_API_KEY\" {\n        return Err(\"Last.fm API 密钥未配置。请配置 LASTFM_API_KEY 后重新构建。\".to_string());\n    }\n    Ok(())\n}",
+      "Last.fm 资料接口缺失密钥时给出明确提示",
+      "fn validate_api_key()"
+    ],
+    "line": 239
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/hotkeys.rs",
+      "    ToggleDesktopLyricsLock,\n}",
+      "    ToggleDesktopLyricsLock,\n    ToggleTheaterLock,\n}",
+      "新增影院锁定快捷键动作",
+      "    ToggleTheaterLock,"
+    ],
+    "line": 263
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/hotkeys.rs",
+      "            \"toggleDesktopLyricsLock\" => Some(HotkeyAction::ToggleDesktopLyricsLock),",
+      "            \"toggleDesktopLyricsLock\" => Some(HotkeyAction::ToggleDesktopLyricsLock),\n            \"toggleTheaterLock\" => Some(HotkeyAction::ToggleTheaterLock),",
+      "注册影院锁定快捷键 ID",
+      "\"toggleTheaterLock\" => Some(HotkeyAction::ToggleTheaterLock)"
+    ],
+    "line": 270
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/hotkeys.rs",
+      "            HotkeyAction::ToggleDesktopLyricsLock => \"toggle-desktop-lyrics-lock\",",
+      "            HotkeyAction::ToggleDesktopLyricsLock => \"toggle-desktop-lyrics-lock\",\n            HotkeyAction::ToggleTheaterLock => \"toggle-theater-lock\",",
+      "注册影院锁定事件名称",
+      "HotkeyAction::ToggleTheaterLock => \"toggle-theater-lock\""
+    ],
+    "line": 277
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/store/uiSlice.ts",
+      "    prev: 'Ctrl+Alt+Left'\n  };",
+      "    prev: 'Ctrl+Alt+Left',\n    toggleTheaterLock: 'Ctrl+Alt+F12'\n  };",
+      "添加默认影院锁定快捷键",
+      "toggleTheaterLock: 'Ctrl+Alt+F12'"
+    ],
+    "line": 284
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "            { id: 'prev', label: 'Previous Track' }\n          ].map(action => {",
+      "            { id: 'prev', label: 'Previous Track' },\n            { id: 'toggleTheaterLock', label: 'Lock / Unlock Theater to Desktop' }\n          ].map(action => {",
+      "设置页加入影院锁定快捷键",
+      "id: 'toggleTheaterLock', label: 'Lock / Unlock Theater to Desktop'"
+    ],
+    "line": 293
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "      setGlobalHotkey(recordingGlobalAction, binding);\n      setRecordingGlobalAction(null);",
+      "      const normalizeBinding = (value: string) => value.replace(/\\s+/g, '').toLowerCase();\n      const conflict = Object.entries(globalHotkeys).find(([id, value]) =>\n        id !== recordingGlobalAction && Boolean(value) && normalizeBinding(value as string) === normalizeBinding(binding)\n      );\n      if (conflict) {\n        window.dispatchEvent(new CustomEvent('ui-toast', {\n          detail: { message: `快捷键冲突：该组合已分配给 ${conflict[0]}，请更换组合键。`, type: 'warning' }\n        }));\n        return;\n      }\n      setGlobalHotkey(recordingGlobalAction, binding);\n      setRecordingGlobalAction(null);",
+      "全局快捷键冲突检测",
+      "const normalizeBinding = (value: string)"
+    ],
+    "line": 300
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "  }, [recordingGlobalAction, setGlobalHotkey]);",
+      "  }, [recordingGlobalAction, setGlobalHotkey, globalHotkeys]);",
+      "全局快捷键冲突检测依赖",
+      "  }, [recordingGlobalAction, setGlobalHotkey, globalHotkeys]);"
+    ],
+    "line": 318
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "detail: { message: 'Global hotkey cleared', type: 'info' }",
+      "detail: { message: '已清除全局快捷键', type: 'info' }",
+      "汉化全局快捷键清除提示",
+      "detail: { message: '已清除全局快捷键', type: 'info' }"
+    ],
+    "line": 325
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "detail: { message: 'Global hotkeys need a modifier (Ctrl/Alt/Shift)', type: 'warning' }",
+      "detail: { message: '全局快捷键必须包含修饰键（Ctrl/Alt/Shift）', type: 'warning' }",
+      "汉化全局快捷键修饰键提示",
+      "detail: { message: '全局快捷键必须包含修饰键（Ctrl/Alt/Shift）', type: 'warning' }"
+    ],
+    "line": 332
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/SettingsView.tsx",
+      "detail: { message: `Global hotkey bound to ${binding}`, type: 'success' }",
+      "detail: { message: `全局快捷键已设置为 ${binding}`, type: 'success' }",
+      "汉化全局快捷键绑定提示",
+      "detail: { message: `全局快捷键已设置为 ${binding}`, type: 'success' }"
+    ],
+    "line": 339
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/store/uiSlice.ts",
+      "detail: { message: `Global hotkey failed: ${e}`, type: 'error' }",
+      "detail: { message: `全局快捷键注册失败：${e}`, type: 'error' }",
+      "汉化全局快捷键注册失败提示",
+      "detail: { message: `全局快捷键注册失败：${e}`, type: 'error' }"
+    ],
+    "line": 346
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/FullscreenView.tsx",
+      "detail: { message: `Fullscreen layout: ${THEATER_NAMES[next]}`, type: 'info' }",
+      "detail: { message: `影院布局：${THEATER_NAMES[next]}`, type: 'info' }",
+      "汉化影院布局切换提示",
+      "detail: { message: `影院布局：${THEATER_NAMES[next]}`, type: 'info' }"
+    ],
+    "line": 353
+  },
+  {
+    "type": "replaceAllExact",
+    "args": [
+      "src/components/FullscreenView.tsx",
+      "detail: { message: `Theater HUD: ${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }",
+      "detail: { message: `影院显示层：${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }",
+      "汉化影院显示层切换提示",
+      "detail: { message: `影院显示层：${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }",
+      2
+    ],
+    "line": 360
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/lib.rs",
+      "#[tauri::command]\nfn enter_borderless_fullscreen(window: Window, fullscreen: bool) -> Result<(), String> {\n    window.set_fullscreen(fullscreen).map_err(|e| e.to_string())\n}",
+      "#[tauri::command]\nfn enter_borderless_fullscreen(window: Window, fullscreen: bool) -> Result<(), String> {\n    window.set_fullscreen(fullscreen).map_err(|e| e.to_string())\n}\n\n#[tauri::command]\nfn set_theater_lock(window: Window, locked: bool) -> Result<(), String> {\n    let was_focused = window.is_focused().unwrap_or(false);\n    if locked {\n        window.set_always_on_bottom(true).map_err(|e| e.to_string())?;\n        if let Err(error) = window.set_ignore_cursor_events(true) {\n            let _ = window.set_always_on_bottom(false);\n            return Err(error.to_string());\n        }\n        #[cfg(target_os = \"windows\")]\n        if was_focused {\n            // Move focus to the Windows desktop only when Aideo owned focus.\n            // Do not steal focus from another application when the global hotkey\n            // is pressed while that application is active.\n            unsafe {\n                use windows::Win32::UI::WindowsAndMessaging::{GetShellWindow, SetForegroundWindow};\n                let shell = GetShellWindow();\n                if shell.0 != 0 {\n                    let _ = SetForegroundWindow(shell);\n                }\n            }\n        }\n    } else {\n        window.set_ignore_cursor_events(false).map_err(|e| e.to_string())?;\n        window.set_always_on_bottom(false).map_err(|e| e.to_string())?;\n    }\n    Ok(())\n}",
+      "增加影院底层锁定命令",
+      "fn set_theater_lock(window: Window, locked: bool)"
+    ],
+    "line": 403
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src-tauri/src/lib.rs",
+      "            enter_borderless_fullscreen,\n",
+      "            enter_borderless_fullscreen,\n            set_theater_lock,\n",
+      "注册影院锁定命令",
+      "            set_theater_lock,"
+    ],
+    "line": 404
+  },
+  {
+    "type": "replaceInRegion",
+    "args": [
+      "src-tauri/src/lib.rs",
+      "async fn set_mini_player_mode(",
+      "\n#[tauri::command]",
+      "window.set_decorations(true).map_err(|e| e.to_string())?;",
+      "// Aideo-ZH: keep the main window borderless when leaving mini-player mode.\n        window.set_decorations(false).map_err(|e| e.to_string())?;",
+      "主窗口恢复时继续使用无边框窗口控件",
+      "// Aideo-ZH: keep the main window borderless when leaving mini-player mode."
+    ],
+    "line": 411
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.0,
+    "args": [
+      "src/App.tsx",
+      "const uPlay = await listen('media-play'",
+      "const uPause = await listen('media-pause'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "播放快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.01,
+    "args": [
+      "src/App.tsx",
+      "const uPause = await listen('media-pause'",
+      "const uToggle = await listen('media-toggle'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "暂停快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.02,
+    "args": [
+      "src/App.tsx",
+      "const uToggle = await listen('media-toggle'",
+      "const uNext = await listen('media-next'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "播放/暂停快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.03,
+    "args": [
+      "src/App.tsx",
+      "const uNext = await listen('media-next'",
+      "const uPrev = await listen('media-prev'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "下一首快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.04,
+    "args": [
+      "src/App.tsx",
+      "const uPrev = await listen('media-prev'",
+      "const uSeek = await listen('media-seek'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "上一首快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.05,
+    "args": [
+      "src/App.tsx",
+      "const uSeek = await listen('media-seek'",
+      "const uVolume = await listen('media-volume'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "跳转快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.06,
+    "args": [
+      "src/App.tsx",
+      "const uVolume = await listen('media-volume'",
+      "const uShuffle = await listen('media-shuffle'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "音量快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.07,
+    "args": [
+      "src/App.tsx",
+      "const uShuffle = await listen('media-shuffle'",
+      "const uRepeat = await listen('media-repeat'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "随机播放快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.08,
+    "args": [
+      "src/App.tsx",
+      "const uRepeat = await listen('media-repeat'",
+      "const uDesktopToggle = await listen('toggle-desktop-lyrics'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "循环快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.09,
+    "args": [
+      "src/App.tsx",
+      "const uDesktopToggle = await listen('toggle-desktop-lyrics'",
+      "const uDesktopLock = await listen('toggle-desktop-lyrics-lock'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "桌面歌词快捷键锁定保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceInRegion",
+    "line": 434.1,
+    "args": [
+      "src/App.tsx",
+      "const uDesktopLock = await listen('toggle-desktop-lyrics-lock'",
+      "const uDesktopClosed = await listen('desktop-lyrics-closed'",
+      "if (isCancelled) return;",
+      "if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;",
+      "桌面歌词锁定快捷键保护",
+      "localStorage.getItem('aideo-theater-locked') === 'true'"
+    ]
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/App.tsx",
+      "      cleanups.push(uDesktopLock);\n\n      const uDesktopClosed = await listen('desktop-lyrics-closed', () => {",
+      "      cleanups.push(uDesktopLock);\n\n      const uTheaterLock = await listen('toggle-theater-lock', async () => {\n        if (isCancelled) return;\n        if (useStore.getState().view !== 'fullscreen') {\n          window.dispatchEvent(new CustomEvent('ui-toast', {\n            detail: { message: '请先进入 Now Playing 的影院全屏界面。', type: 'warning' }\n          }));\n          return;\n        }\n        const locked = localStorage.getItem('aideo-theater-locked') === 'true';\n        const next = !locked;\n        try {\n          await invoke('set_theater_lock', { locked: next });\n          localStorage.setItem('aideo-theater-locked', String(next));\n          window.dispatchEvent(new CustomEvent('ui-toast', {\n            detail: { message: next ? '影院已锁定到底层。按相同快捷键即可解锁。' : '影院锁定已解除。', type: 'info' }\n          }));\n        } catch (error) {\n          window.dispatchEvent(new CustomEvent('ui-toast', {\n            detail: { message: `影院锁定失败：${String(error)}`, type: 'error' }\n          }));\n        }\n      });\n      if (isCancelled) { uTheaterLock(); return; }\n      cleanups.push(uTheaterLock);\n\n      const uDesktopClosed = await listen('desktop-lyrics-closed', () => {",
+      "注册影院锁定事件监听",
+      "const uTheaterLock = await listen('toggle-theater-lock'"
+    ],
+    "line": 444
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/App.tsx",
+      "    // Restore user-configured global hotkeys (works when app is minimized)\n    useStore.getState().initGlobalHotkeys();",
+      "    // A previous process cannot leave the new window in click-through mode.\n    localStorage.setItem('aideo-theater-locked', 'false');\n    invoke('set_theater_lock', { locked: false }).catch(() => {});\n\n    // Restore user-configured global hotkeys (works when app is minimized)\n    useStore.getState().initGlobalHotkeys();",
+      "启动时清除过期影院锁定状态",
+      "localStorage.setItem('aideo-theater-locked', 'false');"
+    ],
+    "line": 478
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/FullscreenView.tsx",
+      "    const handleKeyDown = (e: KeyboardEvent) => {\n      if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;",
+      "    const handleKeyDown = (e: KeyboardEvent) => {\n      if (localStorage.getItem('aideo-theater-locked') === 'true') return;\n      if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;",
+      "锁定时禁用影院内部键盘操作",
+      "if (localStorage.getItem('aideo-theater-locked') === 'true') return;"
+    ],
+    "line": 486
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/components/FullscreenView.tsx",
+      "    return () => {\n      invoke('enter_borderless_fullscreen', { fullscreen: false }).catch(() => {",
+      "    return () => {\n      localStorage.setItem('aideo-theater-locked', 'false');\n      invoke('set_theater_lock', { locked: false }).catch(() => {});\n      invoke('enter_borderless_fullscreen', { fullscreen: false }).catch(() => {",
+      "退出影院时解除鼠标穿透和底层锁定",
+      "invoke('set_theater_lock', { locked: false }).catch(() => {});"
+    ],
+    "line": 493
+  },
+  {
+    "type": "replaceOnce",
+    "args": [
+      "src/utils/playerShortcuts.ts",
+      "export function handlePlayerShortcut(e: KeyboardEvent) {\n  if (e.defaultPrevented || e.isComposing) return;",
+      "export function handlePlayerShortcut(e: KeyboardEvent) {\n  if (localStorage.getItem('aideo-theater-locked') === 'true') return;\n  if (e.defaultPrevented || e.isComposing) return;",
+      "锁定时禁用播放器普通快捷键",
+      "if (localStorage.getItem('aideo-theater-locked') === 'true') return;"
+    ],
+    "line": 500
+  },
+  {
+    "type": "appendOnce",
+    "args": [
+      "src/App.css",
+      "Aideo 中文版功能补丁：透明标题栏与左侧热区自动隐藏侧边栏",
+      "/* Aideo 中文版功能补丁：透明标题栏与左侧热区自动隐藏侧边栏 */\n.window-chrome {\n  position: absolute;\n  inset: 0 0 auto 0;\n  height: 34px;\n  display: flex;\n  justify-content: flex-end;\n  align-items: stretch;\n  background: transparent;\n  border: 0;\n  pointer-events: none;\n  z-index: 1200;\n}\n.window-chrome-drag {\n  position: absolute;\n  inset: 0 138px 0 0;\n  background: transparent;\n  pointer-events: auto;\n}\n.window-chrome button {\n  pointer-events: auto;\n  position: relative;\n  z-index: 1;\n  width: 46px;\n  height: 34px;\n  border: 0;\n  border-radius: 0;\n  background: transparent;\n  color: var(--text-dim);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  transition: background 120ms ease, color 120ms ease;\n}\n.window-chrome button:hover { background: var(--glass-h); color: var(--text); }\n.window-chrome button.window-chrome-close:hover { background: #c42b1c; color: #fff; }\n\n.app.sidebar-auto-hidden {\n  grid-template-columns: 0 minmax(0, 1fr) !important;\n}\n.app.sidebar-auto-hidden .app-sidebar {\n  position: absolute;\n  inset: 0 auto 0 0;\n  width: var(--sidebar-w);\n  max-width: 85vw;\n  height: 100vh;\n  transform: translateX(-100%);\n  opacity: 0;\n  pointer-events: none;\n  z-index: 1100;\n  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.28);\n  transition: transform 180ms ease, opacity 180ms ease;\n}\n.app.sidebar-auto-hidden.sidebar-auto-visible .app-sidebar {\n  transform: translateX(0);\n  opacity: 1;\n  pointer-events: auto;\n}\n.sidebar-hover-zone {\n  position: absolute;\n  left: 0;\n  top: 0;\n  bottom: 0;\n  width: 8px;\n  z-index: 1101;\n  background: transparent;\n}\n.app.sidebar-auto-hidden.theater-active {\n  grid-template-columns: minmax(0, 1fr) !important;\n}\n.app.sidebar-auto-hidden.theater-active .app-sidebar { display: none; }\n.app.sidebar-auto-hidden.theater-active .app-main { grid-column: 1; }\n.app.theater-active .window-chrome { display: none; }\n"
+    ],
+    "line": 693
+  }
+]

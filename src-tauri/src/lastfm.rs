@@ -1,4 +1,3 @@
-use reqwest::Client;
 use std::collections::BTreeMap;
 use serde_json::Value;
 
@@ -14,6 +13,20 @@ fn get_api_secret() -> String {
         .unwrap_or_else(|_| option_env!("LASTFM_API_SECRET").unwrap_or("YOUR_LASTFM_API_SECRET").to_string())
 }
 const API_URL: &str = "https://ws.audioscrobbler.com/2.0/";
+
+fn validate_api_credentials(require_secret: bool) -> Result<(), String> {
+    let key = get_api_key();
+    if key.trim().is_empty() || key == "YOUR_LASTFM_API_KEY" {
+        return Err("Last.fm API 密钥未配置。请配置 LASTFM_API_KEY 后重新构建。".to_string());
+    }
+    if require_secret {
+        let secret = get_api_secret();
+        if secret.trim().is_empty() || secret == "YOUR_LASTFM_API_SECRET" {
+            return Err("Last.fm API Secret 未配置。请配置 LASTFM_API_SECRET 后重新构建。".to_string());
+        }
+    }
+    Ok(())
+}
 
 fn sign_request(params: &mut BTreeMap<String, String>) {
     let mut sig_string = String::new();
@@ -43,6 +56,8 @@ fn encode_params(params: &BTreeMap<String, String>) -> String {
 
 // Phase 1: Get a temporary request token
 pub async fn get_auth_token() -> Result<String, String> {
+    // Aideo-ZH feature patch credential guard: pub async fn get_auth_token() -> Result<String, String> {
+        validate_api_credentials(true)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "auth.getToken".to_string());
     params.insert("api_key".to_string(), get_api_key());
@@ -50,9 +65,9 @@ pub async fn get_auth_token() -> Result<String, String> {
     sign_request(&mut params); // auth.getToken requires a signature
     params.insert("format".to_string(), "json".to_string());
 
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.get(format!("{}?{}", API_URL, encode_params(&params)))
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
 
@@ -72,6 +87,8 @@ pub async fn get_auth_token() -> Result<String, String> {
 
 // Phase 2: Exchange token for a permanent session key
 pub async fn get_session(token: &str) -> Result<String, String> {
+    // Aideo-ZH feature patch credential guard: pub async fn get_session(token: &str) -> Result<String, String> {
+        validate_api_credentials(true)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "auth.getSession".to_string());
     params.insert("token".to_string(), token.to_string());
@@ -81,11 +98,11 @@ pub async fn get_session(token: &str) -> Result<String, String> {
     params.insert("format".to_string(), "json".to_string());
 
     let body_str = encode_params(&params);
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.post(API_URL)
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(body_str)
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     
@@ -97,6 +114,8 @@ pub async fn get_session(token: &str) -> Result<String, String> {
 }
 
 pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {
+    // Aideo-ZH feature patch credential guard: pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &str) -> Result<(), String> {
+        validate_api_credentials(true)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "track.scrobble".to_string());
     params.insert("artist".to_string(), artist.to_string());
@@ -109,11 +128,11 @@ pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &s
     params.insert("format".to_string(), "json".to_string());
 
     let body_str = encode_params(&params);
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.post(API_URL)
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(body_str)
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
 
@@ -131,6 +150,8 @@ pub async fn scrobble(artist: &str, track: &str, timestamp: i64, session_key: &s
 }
 
 pub async fn get_user_info(session_key: &str) -> Result<Value, String> {
+    // Aideo-ZH feature patch credential guard: pub async fn get_user_info(session_key: &str) -> Result<Value, String> {
+        validate_api_credentials(false)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "user.getInfo".to_string());
     params.insert("api_key".to_string(), get_api_key());
@@ -139,15 +160,17 @@ pub async fn get_user_info(session_key: &str) -> Result<Value, String> {
     sign_request(&mut params);
     params.insert("format".to_string(), "json".to_string());
 
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.get(format!("{}?{}", API_URL, encode_params(&params)))
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     Ok(json)
 }
 
 pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {
+    // Aideo-ZH feature patch credential guard: pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {
+        validate_api_credentials(false)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "user.getRecentTracks".to_string());
     params.insert("user".to_string(), username.to_string());
@@ -156,15 +179,17 @@ pub async fn get_recent_tracks(username: &str) -> Result<Value, String> {
     
     params.insert("format".to_string(), "json".to_string());
 
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.get(format!("{}?{}", API_URL, encode_params(&params)))
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     Ok(json)
 }
 
 pub async fn get_top_artists(username: &str) -> Result<Value, String> {
+    // Aideo-ZH feature patch credential guard: pub async fn get_top_artists(username: &str) -> Result<Value, String> {
+        validate_api_credentials(false)?;
     let mut params = BTreeMap::new();
     params.insert("method".to_string(), "user.getTopArtists".to_string());
     params.insert("user".to_string(), username.to_string());
@@ -174,9 +199,9 @@ pub async fn get_top_artists(username: &str) -> Result<Value, String> {
     
     params.insert("format".to_string(), "json".to_string());
 
-    let client = Client::new();
+    let client = crate::get_http_client();
     let res = client.get(format!("{}?{}", API_URL, encode_params(&params)))
-        .send().await.map_err(|e| e.to_string())?;
+        .send().await.map_err(|e| format!("Last.fm 网络请求失败：{e}"))?.error_for_status().map_err(|e| format!("Last.fm HTTP 错误：{e}"))?;
     
     let json: Value = res.json().await.map_err(|e| e.to_string())?;
     Ok(json)

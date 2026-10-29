@@ -514,7 +514,7 @@ async fn search_lyrics_online(
     duration: Option<f64>,
 ) -> Result<Vec<SearchResult>, String> {
     let client = get_http_client();
-    let timeout_dur = std::time::Duration::from_millis(3500);
+    let timeout_dur = std::time::Duration::from_secs(12);
 
     let explicit_title = title.as_deref().unwrap_or("").trim();
     let explicit_artist = artist.as_deref().unwrap_or("").trim();
@@ -582,18 +582,22 @@ async fn search_lyrics_online(
                                 }
                             }
 
-                            results.push(SearchResult {
-                                id: format!("binilyrics-{}", item["id"].as_str().unwrap_or("item")),
-                                title: if track_name.is_empty() { bini_song_fallback.clone() } else { track_name },
-                                artist: artist_name,
-                                source: "BiniLyrics".to_string(),
-                                synced: true,
-                                content_id: Some(lyrics_url),
-                                raw_lrc: raw_ttml,
-                                duration: dur,
-                            });
-                            if timing == "word" {
-                                break;
+                            // Only offer a result when the actual lyric payload was fetched.
+                            // Otherwise the UI may show a match that cannot be downloaded later.
+                            if let Some(raw_ttml) = raw_ttml {
+                                results.push(SearchResult {
+                                    id: format!("binilyrics-{}", item["id"].as_str().unwrap_or("item")),
+                                    title: if track_name.is_empty() { bini_song_fallback.clone() } else { track_name },
+                                    artist: artist_name,
+                                    source: "BiniLyrics".to_string(),
+                                    synced: true,
+                                    content_id: Some(lyrics_url),
+                                    raw_lrc: Some(raw_ttml),
+                                    duration: dur,
+                                });
+                                if timing == "word" {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -3308,6 +3312,35 @@ fn enter_borderless_fullscreen(window: Window, fullscreen: bool) -> Result<(), S
 }
 
 #[tauri::command]
+fn set_theater_lock(window: Window, locked: bool) -> Result<(), String> {
+    let was_focused = window.is_focused().unwrap_or(false);
+    if locked {
+        window.set_always_on_bottom(true).map_err(|e| e.to_string())?;
+        if let Err(error) = window.set_ignore_cursor_events(true) {
+            let _ = window.set_always_on_bottom(false);
+            return Err(error.to_string());
+        }
+        #[cfg(target_os = "windows")]
+        if was_focused {
+            // Move focus to the Windows desktop only when Aideo owned focus.
+            // Do not steal focus from another application when the global hotkey
+            // is pressed while that application is active.
+            unsafe {
+                use windows::Win32::UI::WindowsAndMessaging::{GetShellWindow, SetForegroundWindow};
+                let shell = GetShellWindow();
+                if shell.0 != 0 {
+                    let _ = SetForegroundWindow(shell);
+                }
+            }
+        }
+    } else {
+        window.set_ignore_cursor_events(false).map_err(|e| e.to_string())?;
+        window.set_always_on_bottom(false).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn set_mini_player_mode(window: Window, mini: bool) -> Result<(), String> {
     if mini {
         window.set_decorations(false).map_err(|e| e.to_string())?;
@@ -3317,7 +3350,8 @@ async fn set_mini_player_mode(window: Window, mini: bool) -> Result<(), String> 
         window.set_always_on_top(true).map_err(|e| e.to_string())?;
         window.set_resizable(true).map_err(|e| e.to_string())?;
     } else {
-        window.set_decorations(true).map_err(|e| e.to_string())?;
+        // Aideo-ZH: keep the main window borderless when leaving mini-player mode.
+        window.set_decorations(false).map_err(|e| e.to_string())?;
         window.set_min_size(Some(tauri::Size::Logical(tauri::LogicalSize::new(800.0, 600.0)))).map_err(|e| e.to_string())?;
         window.set_max_size::<tauri::Size>(None).map_err(|e| e.to_string())?;
         window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(1000.0, 700.0))).map_err(|e| e.to_string())?;
@@ -3978,6 +4012,7 @@ pub fn run() {
             center_window,
             set_window_always_on_top,
             enter_borderless_fullscreen,
+            set_theater_lock,
             set_close_to_tray,
             get_close_to_tray,
             open_oauth_window,

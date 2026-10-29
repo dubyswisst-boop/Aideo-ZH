@@ -1,26 +1,44 @@
 {
-  "productName": "Aideo 中文版",
-  "identifier": "com.aideo.community.zh",
-  "plugins": {
-    "updater": {
-      "endpoints": []
-    },
-    "deep-link": {
-      "desktop": {
-        "schemes": ["aideozh"]
-      }
-    }
-  },
-  "bundle": {
-    "createUpdaterArtifacts": false,
-    "resources": {
-      "../locales/zh-CN.json": "locales/zh-CN.json"
-    },
-    "windows": {
-      "nsis": {
-        "languages": ["SimpChinese"],
-        "displayLanguageSelector": false
-      }
-    }
-  }
+    "productName":  "Aideo 中文版",
+    "identifier":  "com.aideo.community.zh",
+    "plugins":  {
+                    "updater":  {
+                                    "endpoints":  [
+
+                                                  ]
+                                },
+                    "deep-link":  {
+                                      "desktop":  {
+                                                      "schemes":  [
+                                                                      "aideozh"
+                                                                  ]
+                                                  }
+                                  }
+                },
+    "bundle":  {
+                   "createUpdaterArtifacts":  false,
+                   "resources":  {
+                                     "../locales/zh-CN.json":  "locales/zh-CN.json"
+                                 },
+                   "windows":  {
+                                   "nsis":  {
+                                                "languages":  [
+                                                                  "SimpChinese"
+                                                              ],
+                                                "displayLanguageSelector":  false
+                                            }
+                               }
+               },
+    "app":  {
+                "windows":  [
+                                {
+                                    "label":  "main",
+                                    "title":  "Aideo 中文版",
+                                    "width":  1000,
+                                    "height":  700,
+                                    "decorations":  false,
+                                    "dragDropEnabled":  false
+                                }
+                            ]
+            }
 }

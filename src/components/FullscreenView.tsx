@@ -270,6 +270,8 @@ export function FullscreenView() {
     appWindow.isFullscreen().then(setIsNativeFullscreen).catch(() => { });
 
     return () => {
+      localStorage.setItem('aideo-theater-locked', 'false');
+      invoke('set_theater_lock', { locked: false }).catch(() => {});
       invoke('enter_borderless_fullscreen', { fullscreen: false }).catch(() => {
         appWindow.setFullscreen(false).catch(err => console.error("Tauri restore window error:", err));
       });
@@ -279,6 +281,7 @@ export function FullscreenView() {
   // Keyboard navigation & ambient hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (localStorage.getItem('aideo-theater-locked') === 'true') return;
       if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;
       const target = e.target instanceof HTMLElement ? e.target : document.activeElement;
       if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
@@ -325,7 +328,7 @@ export function FullscreenView() {
         const next = order[(order.indexOf(cur) + 1) % order.length];
         useStore.getState().setTheaterModeDesign(next);
         window.dispatchEvent(new CustomEvent('ui-toast', {
-          detail: { message: `Fullscreen layout: ${THEATER_NAMES[next]}`, type: 'info' }
+          detail: { message: `影院布局：${THEATER_NAMES[next]}`, type: 'info' }
         }));
       } else if (key === 'h') {
         e.preventDefault();
@@ -334,7 +337,7 @@ export function FullscreenView() {
         const nextHud = hudOrder[(hudOrder.indexOf(curHud) + 1) % hudOrder.length];
         useStore.getState().setTheaterHudStyle(nextHud);
         window.dispatchEvent(new CustomEvent('ui-toast', {
-          detail: { message: `Theater HUD: ${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }
+          detail: { message: `影院显示层：${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }
         }));
       } else if (key === 'v') {
         e.preventDefault();
@@ -563,7 +566,7 @@ export function FullscreenView() {
             const nextHud = hudOrder[(hudOrder.indexOf(theaterHudStyle) + 1) % hudOrder.length];
             setTheaterHudStyle(nextHud);
             window.dispatchEvent(new CustomEvent('ui-toast', {
-              detail: { message: `Theater HUD: ${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }
+              detail: { message: `影院显示层：${THEATER_HUD_NAMES[nextHud]}`, type: 'info' }
             }));
           }}
           title={`HUD: ${THEATER_HUD_NAMES[theaterHudStyle]} (Click or press H to cycle style)`}

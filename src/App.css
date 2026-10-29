@@ -10220,3 +10220,78 @@ html[lang="zh-CN"] .settings-tab-btn,
 html[lang="zh-CN"] .library-search-input {
   font-size: 12.35px; /* 95% of 13px */
 }
+
+/* Aideo 中文版功能补丁：透明标题栏与左侧热区自动隐藏侧边栏 */
+.window-chrome {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 34px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+  z-index: 1200;
+}
+.window-chrome-drag {
+  position: absolute;
+  inset: 0 138px 0 0;
+  background: transparent;
+  pointer-events: auto;
+}
+.window-chrome button {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.window-chrome button:hover { background: var(--glass-h); color: var(--text); }
+.window-chrome button.window-chrome-close:hover { background: #c42b1c; color: #fff; }
+
+.app.sidebar-auto-hidden {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+.app.sidebar-auto-hidden .app-sidebar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-w);
+  max-width: 85vw;
+  height: 100vh;
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1100;
+  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.28);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .app-sidebar {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.sidebar-hover-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  z-index: 1101;
+  background: transparent;
+}
+.app.sidebar-auto-hidden.theater-active {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.app.sidebar-auto-hidden.theater-active .app-sidebar { display: none; }
+.app.sidebar-auto-hidden.theater-active .app-main { grid-column: 1; }
+.app.theater-active .window-chrome { display: none; }

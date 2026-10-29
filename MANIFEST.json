@@ -1,0 +1,47 @@
+{
+  "description": "V8 fixes Windows PowerShell 5.1 locale dictionary case-sensitive JSON keys, preventing Playlists/PLAYLISTS parser failure; also adds idempotent Last.fm API guards.",
+  "files": [
+    {
+      "path": "APPLY_FEATURE_PATCH.cmd",
+      "size": 1200,
+      "sha256": "edc9ed989652cca9cc2b05ac874283b54ace5f8310d59ca9efffa045f8e5fd5a"
+    },
+    {
+      "path": "docs/FEATURE_PATCH_README.md",
+      "size": 12208,
+      "sha256": "5a9817c65f14b7d55e22be8cb2b0dfd291191bfb5cacb4c173facd8b3e337591"
+    },
+    {
+      "path": "scripts/audit-native-localization.mjs",
+      "size": 901,
+      "sha256": "42f3d6d9dd5a073447767f37ead2b201bc55bfd655fe0b5595817f72aaea94c0"
+    },
+    {
+      "path": "src/components/WindowChrome.tsx",
+      "size": 1010,
+      "sha256": "8af5ea7d33a1d6656a16948c13d0734df1d00b5ef01cea3fa0620419ae0568e1"
+    },
+    {
+      "path": "src/test/featurePatchRegression.test.ts",
+      "size": 620,
+      "sha256": "4c238a4944e76c5a8f04c968b205b988f22cca6201940105994ba3cd4e76cd83"
+    },
+    {
+      "path": "tools/aideo-feature-patch/apply.mjs",
+      "size": 38246,
+      "sha256": "f2152e8273b2bead9c0b49f43d9db6d85fd20785133d7183a57e229d69f8c5ac"
+    },
+    {
+      "path": "tools/aideo-feature-patch/apply.ps1",
+      "size": 15937,
+      "sha256": "f007a765637f360ea316ab717e5f3395709fba5be1f6b819288c397516243a51"
+    },
+    {
+      "path": "tools/aideo-feature-patch/patch-ops.json",
+      "size": 31404,
+      "sha256": "54fe425b481c38834e782fd50984d3ebe534e98864f3bca22d455338528c29d3"
+    }
+  ],
+  "version": "8",
+  "notes": "V8: Windows PowerShell 5.1 locale merge preserves case-sensitive keys (e.g. Playlists and PLAYLISTS) without ConvertFrom-Json."
+}

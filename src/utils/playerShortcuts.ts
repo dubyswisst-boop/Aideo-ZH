@@ -2,6 +2,7 @@ import { useStore } from '../store';
 import { toggleOsFullscreen } from './windowFullscreen';
 
 export function handlePlayerShortcut(e: KeyboardEvent) {
+  if (localStorage.getItem('aideo-theater-locked') === 'true') return;
   if (e.defaultPrevented || e.isComposing) return;
   const target = e.target instanceof HTMLElement ? e.target : document.activeElement;
   if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;

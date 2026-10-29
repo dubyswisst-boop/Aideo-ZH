@@ -7,7 +7,7 @@ import { save, open } from '@tauri-apps/plugin-dialog';
 import { SmartPlaylistBuilderModal } from './SmartPlaylistBuilderModal';
 import { useTranslation } from '../i18n';
 
-export function Sidebar() {
+export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {
   const { t } = useTranslation();
   const { 
     view, 
@@ -138,7 +138,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="app-sidebar">
+    <aside className="app-sidebar" onMouseLeave={onMouseLeave}>
       <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: sidebarCollapsed ? '0' : '0 10px', marginBottom: 36, width: '100%' }}>
         {!sidebarCollapsed && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

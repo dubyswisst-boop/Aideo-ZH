@@ -162,7 +162,13 @@ export function LyricsPanel() {
         cleanTitle = title;
         query = `${cleanArtist} ${cleanTitle}`.trim();
       }
-      const r: SearchResult[] = await invoke('search_lyrics_online', { query });
+      const r: SearchResult[] = await invoke('search_lyrics_online', {
+        query,
+        title: cleanTitle || undefined,
+        artist: cleanArtist || undefined,
+        album: currentTrack?.album || undefined,
+        duration: currentTrack?.duration || undefined,
+      });
 
       // Score and rank the results so the exact match floats to the top
       const targetTitle = cleanTitle || currentTrack?.title || '';

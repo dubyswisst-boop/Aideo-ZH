@@ -84,7 +84,8 @@ const getSavedGlobalHotkeys = (): Record<string, string | null> => {
   const defaults: Record<string, string | null> = {
     playPause: 'Ctrl+Alt+P',
     next: 'Ctrl+Alt+Right',
-    prev: 'Ctrl+Alt+Left'
+    prev: 'Ctrl+Alt+Left',
+    toggleTheaterLock: 'Ctrl+Alt+F12'
   };
   const raw = safeGetStorage('aideo-global-hotkeys');
   if (raw) {
@@ -651,7 +652,7 @@ export const createUISlice: StateCreator<PlayerState, [], [], any> = (set, get) 
     invoke('set_global_shortcuts', { bindings: payload }).catch(e => {
       console.error('Failed to apply global shortcut:', e);
       window.dispatchEvent(new CustomEvent('ui-toast', {
-        detail: { message: `Global hotkey failed: ${e}`, type: 'error' }
+        detail: { message: `全局快捷键注册失败：${e}`, type: 'error' }
       }));
     });
   },

@@ -10,6 +10,7 @@ pub enum HotkeyAction {
     Prev,
     ToggleDesktopLyrics,
     ToggleDesktopLyricsLock,
+    ToggleTheaterLock,
 }
 
 impl HotkeyAction {
@@ -20,6 +21,7 @@ impl HotkeyAction {
             "prev" => Some(HotkeyAction::Prev),
             "toggleDesktopLyrics" => Some(HotkeyAction::ToggleDesktopLyrics),
             "toggleDesktopLyricsLock" => Some(HotkeyAction::ToggleDesktopLyricsLock),
+            "toggleTheaterLock" => Some(HotkeyAction::ToggleTheaterLock),
             _ => None,
         }
     }
@@ -33,6 +35,7 @@ impl HotkeyAction {
             HotkeyAction::Prev => "media-prev",
             HotkeyAction::ToggleDesktopLyrics => "toggle-desktop-lyrics",
             HotkeyAction::ToggleDesktopLyricsLock => "toggle-desktop-lyrics-lock",
+            HotkeyAction::ToggleTheaterLock => "toggle-theater-lock",
         }
     }
 }

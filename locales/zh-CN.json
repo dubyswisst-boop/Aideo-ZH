@@ -2461,5 +2461,18 @@
   "Interrupted · ready to retry": "已中断 · 可以重试",
   "Saved · library import failed": "已保存 · 导入音乐库失败",
   "A file now exists at this destination. Choose another copy to review the destination.": "目标位置已存在文件。请选择其他版本并检查保存位置。",
-  "Download failed": "下载失败"
+  "Download failed": "下载失败",
+  "Window controls": "窗口控制",
+  "Minimize": "最小化",
+  "Maximize": "最大化",
+  "Restore": "还原",
+  "Maximize or restore": "最大化/还原",
+  "Close window": "关闭窗口",
+  "Lock / Unlock Theater to Desktop": "锁定/解锁影院全屏",
+  "Last.fm API key is not configured. Configure LASTFM_API_KEY in the build environment.": "Last.fm API 密钥未配置。请配置 LASTFM_API_KEY 后重新构建。",
+  "Last.fm API secret is not configured. Configure LASTFM_API_SECRET in the build environment.": "Last.fm API Secret 未配置。请配置 LASTFM_API_SECRET 后重新构建。",
+  "Theater locked to desktop bottom. Press the same shortcut to unlock.": "影院已锁定到底层。按相同快捷键即可解锁。",
+  "Theater lock released.": "影院锁定已解除。",
+  "Please enter Theater Fullscreen from Now Playing first.": "请先进入 Now Playing 的影院全屏界面。",
+  "Theater lock failed: {error}": "影院锁定失败：{error}"
 }

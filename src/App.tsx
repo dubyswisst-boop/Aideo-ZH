@@ -10,6 +10,7 @@ import { listen } from '@tauri-apps/api/event';
 import { Radio, Download, X } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import './App.css';
+import { WindowChrome } from './components/WindowChrome';
 
 import { Sidebar } from './components/Sidebar';
 import { LibraryView } from './components/LibraryView';
@@ -186,6 +187,17 @@ function AideoApp() {
     accentColor: s.accentColor,
   })));
   const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);
+  const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);
+
+  useEffect(() => {
+    const blockLockedTheaterInput = (event: KeyboardEvent) => {
+      if (localStorage.getItem('aideo-theater-locked') !== 'true') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    window.addEventListener('keydown', blockLockedTheaterInput, true);
+    return () => window.removeEventListener('keydown', blockLockedTheaterInput, true);
+  }, []);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
   const [visitedViews, setVisitedViews] = useState<Set<string>>(() => new Set(['aideo', 'library']));
 
@@ -303,6 +315,10 @@ function AideoApp() {
     // Synchronize Discord RPC setting with backend on startup
     const initialDiscordEnabled = localStorage.getItem('aideo_discord_enabled') !== 'false';
     invoke('set_discord_enabled', { enabled: initialDiscordEnabled }).catch(e => console.error("set_discord_enabled on startup error:", e));
+
+    // A previous process cannot leave the new window in click-through mode.
+    localStorage.setItem('aideo-theater-locked', 'false');
+    invoke('set_theater_lock', { locked: false }).catch(() => {});
 
     // Restore user-configured global hotkeys (works when app is minimized)
     useStore.getState().initGlobalHotkeys();
@@ -592,21 +608,21 @@ function AideoApp() {
       cleanups.push(uLib);
 
       const uPlay = await listen('media-play', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().resumeTrack();
       });
       if (isCancelled) { uPlay(); return; }
       cleanups.push(uPlay);
 
       const uPause = await listen('media-pause', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().pauseTrack();
       });
       if (isCancelled) { uPause(); return; }
       cleanups.push(uPause);
 
       const uToggle = await listen('media-toggle', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         const state = useStore.getState();
         if (state.playback.status === 'Playing') state.pauseTrack();
         else state.resumeTrack();
@@ -615,21 +631,21 @@ function AideoApp() {
       cleanups.push(uToggle);
 
       const uNext = await listen('media-next', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().playNext();
       });
       if (isCancelled) { uNext(); return; }
       cleanups.push(uNext);
 
       const uPrev = await listen('media-prev', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().playPrev();
       });
       if (isCancelled) { uPrev(); return; }
       cleanups.push(uPrev);
 
       const uSeek = await listen('media-seek', (event: any) => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         const pos = typeof event.payload === 'number' ? event.payload : parseFloat(event.payload);
         if (!isNaN(pos)) {
           useStore.getState().seek(pos);
@@ -639,7 +655,7 @@ function AideoApp() {
       cleanups.push(uSeek);
 
       const uVolume = await listen('media-volume', (event: any) => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         const vol = typeof event.payload === 'number' ? event.payload : parseFloat(event.payload);
         if (!isNaN(vol)) {
           useStore.getState().setVolume(vol);
@@ -649,32 +665,57 @@ function AideoApp() {
       cleanups.push(uVolume);
 
       const uShuffle = await listen('media-shuffle', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().toggleShuffle();
       });
       if (isCancelled) { uShuffle(); return; }
       cleanups.push(uShuffle);
 
       const uRepeat = await listen('media-repeat', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().toggleRepeat();
       });
       if (isCancelled) { uRepeat(); return; }
       cleanups.push(uRepeat);
 
       const uDesktopToggle = await listen('toggle-desktop-lyrics', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().toggleDesktopLyrics();
       });
       if (isCancelled) { uDesktopToggle(); return; }
       cleanups.push(uDesktopToggle);
 
       const uDesktopLock = await listen('toggle-desktop-lyrics-lock', () => {
-        if (isCancelled) return;
+        if (isCancelled || localStorage.getItem('aideo-theater-locked') === 'true') return;
         useStore.getState().toggleDesktopLyricsLocked();
       });
       if (isCancelled) { uDesktopLock(); return; }
       cleanups.push(uDesktopLock);
+
+      const uTheaterLock = await listen('toggle-theater-lock', async () => {
+        if (isCancelled) return;
+        if (useStore.getState().view !== 'fullscreen') {
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: { message: '请先进入 Now Playing 的影院全屏界面。', type: 'warning' }
+          }));
+          return;
+        }
+        const locked = localStorage.getItem('aideo-theater-locked') === 'true';
+        const next = !locked;
+        try {
+          await invoke('set_theater_lock', { locked: next });
+          localStorage.setItem('aideo-theater-locked', String(next));
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: { message: next ? '影院已锁定到底层。按相同快捷键即可解锁。' : '影院锁定已解除。', type: 'info' }
+          }));
+        } catch (error) {
+          window.dispatchEvent(new CustomEvent('ui-toast', {
+            detail: { message: `影院锁定失败：${String(error)}`, type: 'error' }
+          }));
+        }
+      });
+      if (isCancelled) { uTheaterLock(); return; }
+      cleanups.push(uTheaterLock);
 
       const uDesktopClosed = await listen('desktop-lyrics-closed', () => {
         if (isCancelled) return;
@@ -952,8 +993,10 @@ function AideoApp() {
 
   return (
     <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
-      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""}`}>
-        <Sidebar />
+      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${view === "fullscreen" ? "theater-active" : ""}`}>
+        <div className="sidebar-hover-zone" onMouseEnter={() => setSidebarAutoVisible(true)} aria-hidden="true" />
+        <Sidebar onMouseLeave={() => setSidebarAutoVisible(false)} />
+        {view !== "fullscreen" && <WindowChrome />}
       <main className="app-main">
         {/* Keep the core heavy views mounted to ensure buttery-smooth instant transitions without re-mounting lag */}
         <div style={{ display: view === 'aideo' ? 'block' : 'none', height: '100%', width: '100%' }}>

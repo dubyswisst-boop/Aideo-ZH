@@ -685,7 +685,7 @@ export function SettingsView() {
         setGlobalHotkey(recordingGlobalAction, null);
         setRecordingGlobalAction(null);
         window.dispatchEvent(new CustomEvent('ui-toast', {
-          detail: { message: 'Global hotkey cleared', type: 'info' }
+          detail: { message: '已清除全局快捷键', type: 'info' }
         }));
         return;
       }
@@ -699,20 +699,30 @@ export function SettingsView() {
       const binding = [...parts, keyName].join('+');
       if (parts.length === 0) {
         window.dispatchEvent(new CustomEvent('ui-toast', {
-          detail: { message: 'Global hotkeys need a modifier (Ctrl/Alt/Shift)', type: 'warning' }
+          detail: { message: '全局快捷键必须包含修饰键（Ctrl/Alt/Shift）', type: 'warning' }
+        }));
+        return;
+      }
+      const normalizeBinding = (value: string) => value.replace(/\s+/g, '').toLowerCase();
+      const conflict = Object.entries(globalHotkeys).find(([id, value]) =>
+        id !== recordingGlobalAction && Boolean(value) && normalizeBinding(value as string) === normalizeBinding(binding)
+      );
+      if (conflict) {
+        window.dispatchEvent(new CustomEvent('ui-toast', {
+          detail: { message: `快捷键冲突：该组合已分配给 ${conflict[0]}，请更换组合键。`, type: 'warning' }
         }));
         return;
       }
       setGlobalHotkey(recordingGlobalAction, binding);
       setRecordingGlobalAction(null);
       window.dispatchEvent(new CustomEvent('ui-toast', {
-        detail: { message: `Global hotkey bound to ${binding}`, type: 'success' }
+        detail: { message: `全局快捷键已设置为 ${binding}`, type: 'success' }
       }));
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [recordingGlobalAction, setGlobalHotkey]);
+  }, [recordingGlobalAction, setGlobalHotkey, globalHotkeys]);
 
   // Cache Size & Usage State
   const [cacheInfo, setCacheInfo] = useState<{ bytes: number; formatted: string; count: number }>({ bytes: 0, formatted: 'Calculating...', count: 0 });
@@ -1223,7 +1233,8 @@ export function SettingsView() {
           {[
             { id: 'playPause', label: 'Play / Pause' },
             { id: 'next', label: 'Next Track' },
-            { id: 'prev', label: 'Previous Track' }
+            { id: 'prev', label: 'Previous Track' },
+            { id: 'toggleTheaterLock', label: 'Lock / Unlock Theater to Desktop' }
           ].map(action => {
             const isRecording = recordingGlobalAction === action.id;
             const binding = globalHotkeys[action.id];

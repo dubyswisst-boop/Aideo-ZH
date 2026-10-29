@@ -37,7 +37,7 @@
     "lint": "tsc --noEmit",
     "test": "vitest run src/test",
     "test:unit": "vitest run src/test",
-    "check:locales": "node --experimental-strip-types scripts/audit-localization.mjs",
+    "check:locales": "node --experimental-strip-types scripts/audit-localization.mjs \u0026\u0026 node scripts/audit-native-localization.mjs",
     "pack:notebooklm": "node scripts/export-notebooklm-pack.mjs",
     "auth:notebooklm": "node scripts/auth-notebooklm.mjs"
   },
