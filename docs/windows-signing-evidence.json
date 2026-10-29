@@ -1,0 +1,293 @@
+{
+  "checkedDate": "2026-10-29",
+  "baselineCommit": "ef2c3d11648d662990b0df859c09f5504ad04276",
+  "branch": "fix/full-chinese-localization",
+  "smartAppControlState": 1,
+  "blocks": [
+    {
+      "Time": "2026-10-29T06:46:21.0692007+08:00",
+      "File": "\\Device\\HarddiskVolume7\\Un-setup\\aideo-zh-windows-x64-installers\\nsis\\Aideo 中文版_0.9.12_x64-setup.exe",
+      "FlatSha256": "997F2CC9D0B663ED6FC4816E7F0DA689EB1B31F9961E225E0C0B95A243C2B497",
+      "PolicyName": "VerifiedAndReputableDesktop",
+      "PolicyGUID": "{0283ac0f-fff1-49ae-ada1-8a933130cad6}",
+      "Status": "0xc0e90002"
+    },
+    {
+      "Time": "2026-10-29T06:31:40.9324435+08:00",
+      "File": "\\Device\\HarddiskVolume7\\Un-setup\\aideo-zh-windows-x64-installers\\nsis\\Aideo 中文版_0.9.12_x64-setup.exe",
+      "FlatSha256": "997F2CC9D0B663ED6FC4816E7F0DA689EB1B31F9961E225E0C0B95A243C2B497",
+      "PolicyName": "VerifiedAndReputableDesktop",
+      "PolicyGUID": "{0283ac0f-fff1-49ae-ada1-8a933130cad6}",
+      "Status": "0xc0e90002"
+    },
+    {
+      "Time": "2026-10-29T06:31:21.2460047+08:00",
+      "File": "\\Device\\HarddiskVolume7\\Un-setup\\aideo-zh-windows-x64-installers\\nsis\\Aideo 中文版_0.9.12_x64-setup.exe",
+      "FlatSha256": "997F2CC9D0B663ED6FC4816E7F0DA689EB1B31F9961E225E0C0B95A243C2B497",
+      "PolicyName": "VerifiedAndReputableDesktop",
+      "PolicyGUID": "{0283ac0f-fff1-49ae-ada1-8a933130cad6}",
+      "Status": "0xc0e90002"
+    },
+    {
+      "Time": "2026-10-29T06:29:30.8951183+08:00",
+      "File": "\\Device\\HarddiskVolume7\\Un-setup\\aideo-zh-windows-x64-installers\\nsis\\Aideo 中文版_0.9.12_x64-setup.exe",
+      "FlatSha256": "997F2CC9D0B663ED6FC4816E7F0DA689EB1B31F9961E225E0C0B95A243C2B497",
+      "PolicyName": "VerifiedAndReputableDesktop",
+      "PolicyGUID": "{0283ac0f-fff1-49ae-ada1-8a933130cad6}",
+      "Status": "0xc0e90002"
+    },
+    {
+      "Time": "2026-10-28T16:21:04.2241874+08:00",
+      "File": "\\Device\\HarddiskVolume3\\Users\\Eailuo\\AppData\\Local\\Temp\\_MEI71562\\curl_cffi\\_wrapper.pyd",
+      "FlatSha256": "1D478B6EA9D7D80CC165563FF1744B5EDDDA19C0015B843CA7964A6EC879DDCA",
+      "PolicyName": "VerifiedAndReputableDesktop",
+      "PolicyGUID": "{0283ac0f-fff1-49ae-ada1-8a933130cad6}",
+      "Status": "0xc0e90002"
+    }
+  ],
+  "installers": [
+    {
+      "Path": "temp/signing-audit/upstream-setup.exe",
+      "Sha256": "E8FFA3AEC16F62F7DFDDBC517CEC93349E1AD58C9297657F76BA481360F2FBC5",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current/nsis/Aideo 中文版_0.9.12_x64-setup.exe",
+      "Sha256": "997F2CC9D0B663ED6FC4816E7F0DA689EB1B31F9961E225E0C0B95A243C2B497",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical/nsis/Aideo 中文版_0.9.12_x64-setup.exe",
+      "Sha256": "561806743B9FD0A3E85A33FDB70BB22F42FC8C47A7F9BDDE089BFFE8DD174328",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    }
+  ],
+  "payloadPEs": [
+    {
+      "Path": "temp/signing-audit/current-payload/aideo.exe",
+      "SHA256": "FBBE8B1BC42C3252BA5A2F87DCAE61583C68DD96388F417E1D1AF836E11196CF",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/uninstall.exe",
+      "SHA256": "1B65D3C88DBE7787B1D2CF93C158DB4219827565DBB8F1CFC90B12C71A57A385",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/$PLUGINSDIR/nsDialogs.dll",
+      "SHA256": "B1350F487692057C8FFDE75DCC55287A52A3272240D4D4912F24464B27551FC0",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/$PLUGINSDIR/nsis_tauri_utils.dll",
+      "SHA256": "5BA143B5DB4A87D32D6E7802E033330AAE56CBCEABE0D1E3BA41948385AD4709",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/$PLUGINSDIR/NSISdl.dll",
+      "SHA256": "DDF40229DD9D6B268902D8DEA88C8A04AACF1AF218DD29F6DCD35BABC54AC08D",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/$PLUGINSDIR/StartMenu.dll",
+      "SHA256": "FE330320459637D8DD2B5D84D07925C38EC264152FFD3B1760A4D44D76536CAA",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/current-payload/$PLUGINSDIR/System.dll",
+      "SHA256": "8B4C47C4CF5E76EC57DD5A050D5ACD832A0D532EE875D7B44F6CDAF68F90D37C",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/aideo.exe",
+      "SHA256": "671D0566C22BFCC36E30556CFA9C2CAB949A83BE15F638F6BC170EB8585D8F1C",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/uninstall.exe",
+      "SHA256": "AB0F2AB84B7091F447F60E396810B3094A4907CD1953A3922A140932481D666D",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/$PLUGINSDIR/nsDialogs.dll",
+      "SHA256": "B1350F487692057C8FFDE75DCC55287A52A3272240D4D4912F24464B27551FC0",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/$PLUGINSDIR/nsis_tauri_utils.dll",
+      "SHA256": "5BA143B5DB4A87D32D6E7802E033330AAE56CBCEABE0D1E3BA41948385AD4709",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/$PLUGINSDIR/NSISdl.dll",
+      "SHA256": "DDF40229DD9D6B268902D8DEA88C8A04AACF1AF218DD29F6DCD35BABC54AC08D",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/$PLUGINSDIR/StartMenu.dll",
+      "SHA256": "FE330320459637D8DD2B5D84D07925C38EC264152FFD3B1760A4D44D76536CAA",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/historical-payload/$PLUGINSDIR/System.dll",
+      "SHA256": "8B4C47C4CF5E76EC57DD5A050D5ACD832A0D532EE875D7B44F6CDAF68F90D37C",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/aideo.exe",
+      "SHA256": "5CB8B11E0134F127BBC359E3299334100B1C887A8E2A96CEA730F5EE62F2E0E2",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/uninstall.exe",
+      "SHA256": "DB09B974267E6A8DE7E06EFE658FD29AF8BFF4B7A81EBBEBC5E17367DE7E92A8",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/$PLUGINSDIR/nsDialogs.dll",
+      "SHA256": "B1350F487692057C8FFDE75DCC55287A52A3272240D4D4912F24464B27551FC0",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/$PLUGINSDIR/nsis_tauri_utils.dll",
+      "SHA256": "5BA143B5DB4A87D32D6E7802E033330AAE56CBCEABE0D1E3BA41948385AD4709",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/$PLUGINSDIR/NSISdl.dll",
+      "SHA256": "DDF40229DD9D6B268902D8DEA88C8A04AACF1AF218DD29F6DCD35BABC54AC08D",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/$PLUGINSDIR/StartMenu.dll",
+      "SHA256": "FE330320459637D8DD2B5D84D07925C38EC264152FFD3B1760A4D44D76536CAA",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    },
+    {
+      "Path": "temp/signing-audit/upstream-payload/$PLUGINSDIR/System.dll",
+      "SHA256": "8B4C47C4CF5E76EC57DD5A050D5ACD832A0D532EE875D7B44F6CDAF68F90D37C",
+      "Status": "NotSigned",
+      "Publisher": null,
+      "Timestamp": null
+    }
+  ],
+  "defender": {
+    "installer": {
+      "target": "temp/signing-audit/current/nsis/Aideo 中文版_0.9.12_x64-setup.exe",
+      "exitCode": 0,
+      "signatureVersion": "1.463.16.0",
+      "checkedAt": "2026-10-28T23:12:56.7975368Z",
+      "passed": true
+    },
+    "payload": {
+      "target": "temp/signing-audit/current-payload",
+      "exitCode": 0,
+      "signatureVersion": "1.463.16.0",
+      "checkedAt": "2026-10-28T23:12:58.0395583Z",
+      "passed": true
+    }
+  },
+  "newSignedInstaller": null,
+  "nativeBuild": {
+    "exitCode": 1,
+    "reason": "cargo metadata: program not found"
+  },
+  "signatureGate": {
+    "unsignedInstallerRejected": true,
+    "allEightPEsNotSigned": true,
+    "positiveControl": "Microsoft Windows SDK SignTool: Valid, SHA256, timestamped, SignTool verify exit 0"
+  },
+  "externalServiceConfigured": false,
+  "validation": {
+    "typecheckExit": 0,
+    "frontendBuildExit": 0,
+    "frontendTestFiles": 149,
+    "frontendTests": 1441,
+    "frontendTestExit": 0,
+    "focusedTestExit": 0,
+    "actionlintExit": 0,
+    "powershellParserExit": 0,
+    "defenderInstallerExit": 0,
+    "defenderPayloadExit": 0,
+    "focusedTestFiles": 2,
+    "focusedTests": 10,
+    "updaterSignatureAnalysisExit": 0
+  },
+  "publisher": {
+    "type": "individual",
+    "country": "China",
+    "hasTrustedCodeSigningCertificate": false,
+    "hasApprovedSigningService": false,
+    "paidServiceApproval": false,
+    "source": "explicit user reply"
+  },
+  "repositoryRelationship": {
+    "full_name": "dubyswisst-boop/Aideo-ZH",
+    "fork": false,
+    "parent": null,
+    "default_branch": "main"
+  },
+  "upstreamUpdaterSignature": {
+    "type": "Tauri updater minisign (Ed25519 + BLAKE2b-512), not Windows Authenticode",
+    "source": "https://github.com/Alirull18/Aideo-Music-Player/releases/tag/v0.9.12",
+    "installerSha256": "e8ffa3aec16f62f7dfddbc517cec93349e1ad58c9297657f76ba481360f2fbc5",
+    "keyId": "ea14115ac8feff81",
+    "keyIdMatches": true,
+    "signatureValid": true,
+    "trustedCommentValid": true,
+    "latestJsonSignatureMatches": true,
+    "trustedComment": "timestamp:1791339773\tfile:Aideo_0.9.12_x64-setup.exe\tversion:0.9.12",
+    "authenticodeStatus": "NotSigned (checked separately with Windows APIs and SignTool)"
+  },
+  "eligibility": {
+    "signPathFoundation": "Unapproved; provenance, upstream signing, releases and third-party signing require clarification",
+    "forkFalseAlone": "Not an automatic rejection rule; GitHub fork feature is an example in the policy",
+    "azurePublicTrustIndividual": "Not available to the confirmed Chinese individual publisher"
+  }
+}

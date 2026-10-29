@@ -8,6 +8,8 @@
 
 使用、复制或分发本项目时，请遵守适用的开源许可证及相关要求。
 
+**Windows Code signing policy（待启用）**：当前汉化安装包尚无可用的可信 Authenticode 签名身份。默认构建产物仅供未签名测试；正式签名候选必须通过逐 PE 签名、时间戳、安全扫描及安装检查。参见[签名政策与配置](docs/WINDOWS_SIGNING.md)和[实际拦截审计](docs/WINDOWS_INSTALLER_REVIEW.md)。有效签名也不保证所有 Windows 安全机制都会放行。
+
 **English**
 
 Aideo-ZH is a derivative version of the upstream open-source project [Aideo Music Player](https://github.com/Alirull18/Aideo-Music-Player). Its primary modifications focus on Simplified Chinese localization, Chinese typography, and UI display refinements.

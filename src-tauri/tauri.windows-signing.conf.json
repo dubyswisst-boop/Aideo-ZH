@@ -1,0 +1,12 @@
+{
+  "bundle": {
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "tsp": true,
+      "signCommand": {
+        "cmd": "pwsh",
+        "args": ["-NoProfile", "-NonInteractive", "-File", "../scripts/sign-windows.ps1", "-Path", "%1"]
+      }
+    }
+  }
+}

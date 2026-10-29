@@ -1,0 +1,10 @@
+{
+  "description": "Unsigned third-party NSIS plugins allowed for signing with the project's own approved public-trust identity, NOT a SignPath Foundation identity. Hashes verified against Tauri's pinned official toolchain downloads. Review when upgrading Tauri/NSIS.",
+  "thirdParty": [
+    { "name": "nsDialogs.dll", "sha256": "B1350F487692057C8FFDE75DCC55287A52A3272240D4D4912F24464B27551FC0", "source": "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip" },
+    { "name": "NSISdl.dll", "sha256": "DDF40229DD9D6B268902D8DEA88C8A04AACF1AF218DD29F6DCD35BABC54AC08D", "source": "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip" },
+    { "name": "StartMenu.dll", "sha256": "FE330320459637D8DD2B5D84D07925C38EC264152FFD3B1760A4D44D76536CAA", "source": "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip" },
+    { "name": "System.dll", "sha256": "8B4C47C4CF5E76EC57DD5A050D5ACD832A0D532EE875D7B44F6CDAF68F90D37C", "source": "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip" },
+    { "name": "nsis_tauri_utils.dll", "sha256": "5BA143B5DB4A87D32D6E7802E033330AAE56CBCEABE0D1E3BA41948385AD4709", "source": "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.5.3/nsis_tauri_utils.dll" }
+  ]
+}
