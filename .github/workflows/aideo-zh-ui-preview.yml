@@ -23,9 +23,9 @@ jobs:
         with:
           node-version: '22'
       - name: Install Playwright only for layout test
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --prefix tools/ui-preview --no-save --package-lock=false --ignore-scripts --legacy-peer-deps playwright@1.56.1
       - name: Install Chromium dependencies
-        run: npx playwright install --with-deps chromium
+        run: ./tools/ui-preview/node_modules/.bin/playwright install --with-deps chromium
       - name: Browser layout checks and screenshots
         run: node tools/ui-preview/test-sidebar.mjs
       - name: Upload report even on failure
