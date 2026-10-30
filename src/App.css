@@ -10485,3 +10485,21 @@ html[lang="zh-CN"] textarea {
 @media (prefers-reduced-motion: reduce) {
   .app.nowplaying-playerbar-autohide .player-bar { transition: none; }
 }
+/* AIDEO-ZH LYRICS REVEAL NEXT TO WINDOW BUTTONS V1 */
+/* WindowChrome: three 46px buttons in a 34px titlebar. */
+.app.nowplaying-playerbar-autohide .np-right .lyric-header-reveal-btn {
+  top: 0;
+  right: calc(138px + 8px);
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  max-width: calc(100% - 12px);
+  transform: none;
+}
+.app.nowplaying-playerbar-autohide .np-right .lyric-header-reveal-btn:hover {
+  transform: none;
+}
+/* Leave an unobstructed click target to the left of Minimize. */
+.app.nowplaying-playerbar-autohide .window-chrome-drag {
+  right: 300px;
+}
