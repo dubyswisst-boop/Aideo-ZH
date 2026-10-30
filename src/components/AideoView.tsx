@@ -1956,30 +1956,30 @@ export function AideoView() {
       <section className="aideo-section">
         <div className="aideo-discovery-header">
           <div className="aideo-discovery-title-wrap">
-            <h2 className="aideo-sec-title" style={{ margin: 0 }}>Discovery Hub</h2>
+            <h2 className="aideo-sec-title" style={{ margin: 0 }}>音乐发现</h2>
             <p style={{ margin: '3px 0 0 0', fontSize: 12, color: 'var(--text-dim)' }}>
-              Recommendations from your library and listening history
+              根据你的音乐库和收听记录推荐
             </p>
           </div>
 
           <div className="aideo-discovery-toolbar">
             {/* Layout Selector: Multi-Shelf vs Unified Feed */}
-            <div className="discovery-layout-toggle" title={`Layout: ${discoveryLayout === 'shelves' ? 'Multi-Shelf View' : 'Unified Feed'}`}>
+            <div className="discovery-layout-toggle" title={`布局：${discoveryLayout === 'shelves' ? '分类视图' : '统一信息流'}`}>
               <button
                 onClick={() => setDiscoveryLayout('shelves')}
                 className={`discovery-layout-btn ${discoveryLayout === 'shelves' ? 'active' : ''}`}
-                title="Multi-Shelf View"
+                title="分类视图"
               >
                 <Layers size={13} />
-                <span>Shelves</span>
+                <span>分类展示</span>
               </button>
               <button
                 onClick={() => setDiscoveryLayout('unified')}
                 className={`discovery-layout-btn ${discoveryLayout === 'unified' ? 'active' : ''}`}
-                title="Unified Feed View"
+                title="统一信息流视图"
               >
                 <LayoutGrid size={13} />
-                <span>Unified</span>
+                <span>统一展示</span>
               </button>
             </div>
 
@@ -2006,14 +2006,14 @@ export function AideoView() {
               <button
                 onClick={() => setDiscoveryViewMode('grid')}
                 className={`discovery-view-btn ${discoveryViewMode === 'grid' ? 'active' : ''}`}
-                title="Grid View"
+                title="网格视图"
               >
                 <LayoutGrid size={14} />
               </button>
               <button
                 onClick={() => setDiscoveryViewMode('list')}
                 className={`discovery-view-btn ${discoveryViewMode === 'list' ? 'active' : ''}`}
-                title="List View"
+                title="列表视图"
               >
                 <List size={14} />
               </button>
@@ -2023,10 +2023,10 @@ export function AideoView() {
               onClick={() => fetchRecommendations(true)}
               disabled={isRefreshingRecs || isLoadingRecs}
               className="discovery-refresh-btn"
-              title="Re-run discovery algorithm"
+              title="重新生成音乐推荐"
             >
               <RefreshCw size={13} className={isRefreshingRecs || isLoadingRecs ? "spin" : ""} />
-              <span>{isRefreshingRecs ? "Refreshing..." : "Refresh Recommendations"}</span>
+              <span>{isRefreshingRecs ? "正在刷新…" : "刷新推荐"}</span>
             </button>
           </div>
         </div>
@@ -2035,7 +2035,7 @@ export function AideoView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-dim)', fontSize: 12, fontWeight: 500 }}>
               <Loader2 className="spin" size={14} style={{ color: 'var(--accent)' }} />
-              <span>Loading recommendations...</span>
+              <span>正在加载推荐…</span>
             </div>
             <div
               className="discovery-skeleton-grid"
@@ -2060,7 +2060,7 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <RotateCcw size={17} color="var(--accent)" />
-                        <h3 className="discovery-shelf-title">Recently played</h3>
+                        <h3 className="discovery-shelf-title">最近播放</h3>
                       </div>
                       <span className="discovery-shelf-badge">{discoveryData.recently_played.length} tracks</span>
                     </div>
@@ -2074,9 +2074,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Sparkles size={17} color="#06b6d4" />
-                        <h3 className="discovery-shelf-title">Your mixes</h3>
+                        <h3 className="discovery-shelf-title">我的混音歌单</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Mixes from your listening history</span>
+                      <span className="discovery-shelf-badge">根据收听记录生成的混音歌单</span>
                     </div>
                     {renderMixCards(discoveryData.mixed_for_you)}
                   </div>
@@ -2088,9 +2088,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Target size={17} color="var(--accent)" />
-                        <h3 className="discovery-shelf-title">Recommended For You</h3>
+                        <h3 className="discovery-shelf-title">为你推荐</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Similar To Songs You Love</span>
+                      <span className="discovery-shelf-badge">与你收藏的歌曲相似</span>
                     </div>
                     {renderTrackCarousel(discoveryData.recommendations.slice(0, 12))}
                   </div>
@@ -2102,9 +2102,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Waves size={17} color="#22d3ee" />
-                        <h3 className="discovery-shelf-title">Tidal tracks</h3>
+                        <h3 className="discovery-shelf-title">Tidal 歌曲</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Stream and download</span>
+                      <span className="discovery-shelf-badge">在线播放与下载</span>
                     </div>
                     {renderTrackCarousel(discoveryData.tidal_hifi.slice(0, 12))}
                   </div>
@@ -2116,9 +2116,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Clock size={17} color="#a855f7" />
-                        <h3 className="discovery-shelf-title">Older favorites</h3>
+                        <h3 className="discovery-shelf-title">久未播放的收藏</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Old Favorites You Haven't Played Recently</span>
+                      <span className="discovery-shelf-badge">近期未播放的收藏歌曲</span>
                     </div>
                     {renderTrackCarousel(discoveryData.forgotten_gems.slice(0, 12))}
                   </div>
@@ -2130,9 +2130,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <ListMusic size={17} color="#ec4899" />
-                        <h3 className="discovery-shelf-title">Playlist mixes</h3>
+                        <h3 className="discovery-shelf-title">歌单混音</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Ready to Play</span>
+                      <span className="discovery-shelf-badge">随时播放</span>
                     </div>
                     {renderMixCards(discoveryData.playlist_mixes)}
                   </div>
@@ -2144,9 +2144,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Flame size={17} color="#f59e0b" />
-                        <h3 className="discovery-shelf-title">Most played</h3>
+                        <h3 className="discovery-shelf-title">播放最多</h3>
                       </div>
-                      <span className="discovery-shelf-badge">Frequently played tracks</span>
+                      <span className="discovery-shelf-badge">经常播放的歌曲</span>
                     </div>
                     {renderTrackCarousel(discoveryData.heavy_rotation.slice(0, 12))}
                   </div>
@@ -2158,9 +2158,9 @@ export function AideoView() {
                     <div className="discovery-shelf-header">
                       <div className="discovery-shelf-title-wrap">
                         <Compass size={17} color="#3b82f6" />
-                        <h3 className="discovery-shelf-title">{appMode === 'local' ? 'Local Top Hits' : 'Global Trends & Charts'}</h3>
+                        <h3 className="discovery-shelf-title">{appMode === 'local' ? '本地热门歌曲' : '全球趋势与榜单'}</h3>
                       </div>
-                      <span className="discovery-shelf-badge">{appMode === 'local' ? 'Local tracks' : 'Last.fm charts'}</span>
+                      <span className="discovery-shelf-badge">{appMode === 'local' ? '本地歌曲' : 'Last.fm 榜单'}</span>
                     </div>
                     {renderTrackCarousel(discoveryData.global_charts.slice(0, 12))}
                   </div>
@@ -2189,7 +2189,7 @@ export function AideoView() {
                   <div className="discovery-unified-section">
                     <div className="discovery-unified-section-title">
                       <Sparkles size={14} color="#06b6d4" />
-                      <span>Made For You</span>
+                      <span>为你制作</span>
                     </div>
                     {renderMixCards(discoveryData.mixed_for_you)}
                   </div>
@@ -2199,7 +2199,7 @@ export function AideoView() {
                   <div className="discovery-unified-section">
                     <div className="discovery-unified-section-title">
                       <ListMusic size={14} color="#ec4899" />
-                      <span>Playlist mixes</span>
+                      <span>歌单混音</span>
                     </div>
                     {renderMixCards(discoveryData.playlist_mixes)}
                   </div>
@@ -2215,7 +2215,7 @@ export function AideoView() {
                     return (
                       <div className="aideo-empty-box" style={{ margin: '20px 0' }}>
                         <Compass size={28} />
-                        <p>No tracks in this category.</p>
+                        <p>此分类暂无歌曲。</p>
                       </div>
                     );
                   }
@@ -2231,7 +2231,7 @@ export function AideoView() {
                             onClick={() => setVisibleRecsCount(prev => prev + 15)}
                             className="discovery-cta-secondary"
                           >
-                            <span>Load More Discovery Tracks</span>
+                            <span>加载更多发现歌曲</span>
                             <span style={{ fontSize: 11, opacity: 0.7 }}>
                               ({visibleRecsCount} of {tracksToDisplay.length})
                             </span>
@@ -2247,9 +2247,9 @@ export function AideoView() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180, color: 'var(--text-dim)', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <Sparkles size={24} color="var(--accent)" style={{ marginBottom: 8 }} />
-            <p style={{ margin: '0 0 12px 0', fontSize: 13 }}>Load recommendations based on your listening history.</p>
+            <p style={{ margin: '0 0 12px 0', fontSize: 13 }}>根据你的收听记录生成推荐。</p>
             <button className="btn btn-primary" onClick={() => fetchRecommendations(true)} style={{ padding: '8px 18px', fontSize: 12 }}>
-              Load Recommendations
+              加载推荐
             </button>
           </div>
         )}
