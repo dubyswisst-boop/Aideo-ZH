@@ -308,8 +308,8 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
   }, [onFocusChange]);
 
   const sources: Array<{ id: 'all' | 'youtube' | 'tidal' | 'qobuz'; label: string; dot?: string }> = [
-    { id: 'all', label: 'All sources' },
-    { id: 'youtube', label: variant === 'pill' ? 'Web' : 'Webstream' },
+    { id: 'all', label: '所有音源' },
+    { id: 'youtube', label: variant === 'pill' ? '网络' : '在线音源' },
     { id: 'tidal', label: 'Tidal', dot: tidalConnected ? '#10b981' : 'rgba(239, 68, 68, 0.55)' },
     ...(qobuzEnabled ? [{ id: 'qobuz' as const, label: variant === 'pill' ? 'Qobuz' : 'Qobuz β', dot: qobuzConnected ? '#10b981' : 'rgba(239, 68, 68, 0.55)' }] : []),
   ];
@@ -317,10 +317,10 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
   const pickSource = (id: 'all' | 'youtube' | 'tidal' | 'qobuz') => {
     onSourceChange(id);
     if (id === 'tidal' && !tidalConnected) {
-      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Tidal first in Settings > Library > Tidal.', type: 'warning' } }));
+      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在“设置 > 音乐库 > Tidal”中连接 Tidal。', type: 'warning' } }));
     }
     if (id === 'qobuz' && !qobuzConnected) {
-      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Qobuz first in Settings > Library > Qobuz (Experimental).', type: 'warning' } }));
+      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在“设置 > 音乐库 > Qobuz（实验性）”中连接 Qobuz。', type: 'warning' } }));
     }
   };
 
@@ -330,7 +330,7 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
     <div className={`ah-search ah-search-${variant}`} ref={wrapRef}>
       {appMode !== 'local' && (
         <details className="unified-source-filter">
-          <summary>Source filter: {sources.find(s => s.id === source)?.label}</summary>
+          <summary>音源筛选：{sources.find(s => s.id === source)?.label}</summary>
           <div className="source-filter-options">
             {sources.map(s => <button key={s.id} type="button" className="source-button" aria-pressed={source === s.id} onClick={() => pickSource(s.id)}>{s.label}</button>)}
           </div>
@@ -341,15 +341,15 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
           <Search size={variant === 'rail' ? 15 : 18} />
           <input
             type="text"
-            aria-label="Search songs and sources"
-            placeholder={appMode === 'local' ? 'Search local music library…' : (variant === 'rail' ? 'Search all sources…' : variant === 'pill' ? 'Search songs, artists, or links…' : 'Search songs, artists, or paste a link…')}
+            aria-label="搜索歌曲与音源"
+            placeholder={appMode === 'local' ? '搜索本地音乐库…' : (variant === 'rail' ? '搜索所有音源…' : variant === 'pill' ? '搜索歌曲、歌手或链接…' : '搜索歌曲、歌手，或粘贴链接…')}
             value={query}
             onChange={e => onQueryChange(e.target.value)}
             onFocus={() => onFocusChange(true)}
             onKeyDown={e => { if (e.key === 'Escape') onFocusChange(false); }}
           />
           {query && (
-            <button type="button" aria-label="Clear search" className="ah-search-clear" onClick={() => onQueryChange('')}>
+            <button type="button" aria-label="清空搜索" className="ah-search-clear" onClick={() => onQueryChange('')}>
               <X size={15} />
             </button>
           )}
@@ -374,7 +374,7 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
           ))}
           {quickResults.length > 0 && (
             <>
-              <div className="ah-dd-section">Songs</div>
+              <div className="ah-dd-section">歌曲</div>
               {quickResults.map(track => (
                 <div
                   key={`quick-${track.id}`}
@@ -398,8 +398,8 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
                     <button
                       type="button"
                       className="ah-dd-more"
-                      title="More options"
-                      aria-label="More options"
+                      title="更多选项"
+                      aria-label="更多选项"
                       onClick={(e) => {
                         e.stopPropagation();
                         onTrackContextMenu(track, e.currentTarget.getBoundingClientRect());
@@ -434,7 +434,7 @@ export function AideoSearchBar({ variant, props }: { variant: 'column' | 'rail' 
 
 export function PlayButton({ onClick, size = 34, playing = false }: { onClick: () => void; size?: number; playing?: boolean }) {
   return (
-    <button className={`ah-play-btn ${playing ? 'playing' : ''}`} style={{ width: size, height: size }} onClick={e => { e.stopPropagation(); onClick(); }} title="Play">
+    <button className={`ah-play-btn ${playing ? 'playing' : ''}`} style={{ width: size, height: size }} onClick={e => { e.stopPropagation(); onClick(); }} title="播放">
       <Play size={Math.round(size * 0.38)} fill="currentColor" />
     </button>
   );
