@@ -2474,5 +2474,8 @@
   "Theater locked to desktop bottom. Press the same shortcut to unlock.": "影院已锁定到底层。按相同快捷键即可解锁。",
   "Theater lock released.": "影院锁定已解除。",
   "Please enter Theater Fullscreen from Now Playing first.": "请先进入 Now Playing 的影院全屏界面。",
-  "Theater lock failed: {error}": "影院锁定失败：{error}"
+  "Theater lock failed: {error}": "影院锁定失败：{error}",
+  "卡拉 OK（逐字）": "卡拉 OK（逐字）",
+  "显示模式：{value} — 点击切换": "显示模式：{value} — 点击切换",
+  "请在下方粘贴 LRC 或同步歌词文本。": "请在下方粘贴 LRC 或同步歌词文本。"
 }

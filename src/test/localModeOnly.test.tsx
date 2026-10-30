@@ -154,7 +154,7 @@ describe('Local File Only Mode (appMode === "local")', () => {
   });
 
   it('does not fetch lyrics online when appMode is local', async () => {
-    useStore.setState({ appMode: 'local', lyrics: [] });
+    useStore.setState({ appMode: 'local', currentTrack: localTrack, playback: { ...useStore.getState().playback, current_track: localTrack.path }, lyrics: [] });
     await useStore.getState().autoFetchLyricsOnline(localTrack);
 
     expect(vi.mocked(invoke)).not.toHaveBeenCalledWith('search_lyrics_online', expect.anything());
@@ -162,7 +162,7 @@ describe('Local File Only Mode (appMode === "local")', () => {
   });
 
   it('fetches lyrics online when appMode is hybrid', async () => {
-    useStore.setState({ appMode: 'hybrid', lyrics: [] });
+    useStore.setState({ appMode: 'hybrid', currentTrack: localTrack, playback: { ...useStore.getState().playback, current_track: localTrack.path }, lyrics: [] });
     await useStore.getState().autoFetchLyricsOnline(localTrack);
 
     expect(vi.mocked(invoke)).toHaveBeenCalledWith('search_lyrics_online', expect.anything());
