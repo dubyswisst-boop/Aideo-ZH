@@ -10414,3 +10414,47 @@ html[lang="zh-CN"] textarea {
 .app.sidebar-auto-hidden.sidebar-auto-visible .sidebar-hover-zone { pointer-events: none; }
 .app.sidebar-auto-hidden.theater-active .app-sidebar,
 .app.sidebar-auto-hidden.theater-active .sidebar-hover-zone { display: none !important; }
+
+/* V10 S2 layout hotfix: expanded labels and full-window overlay. */
+.app.sidebar-auto-hidden .app-sidebar {
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: 3100;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar {
+  width: min(270px, 85vw);
+  padding-left: 12px;
+  padding-right: 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar .nav-item {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  justify-content: flex-start;
+  gap: 12px;
+  padding-left: 12px;
+  padding-right: 12px;
+  box-sizing: border-box;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar .nav-item > span {
+  display: inline;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar .sidebar-logo {
+  min-width: 0;
+}
+/* The Settings item at the bottom remains reachable, including above player bar. */
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar > .nav-item:last-of-type {
+  flex-shrink: 0;
+}
+/* Keep the edge trigger and the actual theater hide policy intact. */
+.app.sidebar-auto-hidden.theater-active .app-sidebar { display: none !important; }
