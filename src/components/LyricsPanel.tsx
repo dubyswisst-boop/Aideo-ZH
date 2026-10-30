@@ -104,6 +104,17 @@ export function LyricsPanel() {
   const [showEditor, setShowEditor] = useState(false);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const lyricSearchVersion = useRef(0);
+  const lyricPickVersion = useRef(0);
+  const activeLyricPath = useRef(playbackCurrentTrack);
+  activeLyricPath.current = playbackCurrentTrack;
+  useEffect(() => {
+    lyricSearchVersion.current += 1;
+    lyricPickVersion.current += 1;
+    setResults([]);
+    setSearching(false);
+    setShowFinder(false);
+  }, [playbackCurrentTrack]);
   const [editContent, setEditContent] = useState('');
   const [showFallbackSearch, setShowFallbackSearch] = useState(false);
 
@@ -146,6 +157,10 @@ export function LyricsPanel() {
 
   const doSearch = async (manualQuery?: string) => {
     if (!currentTrack && !manualQuery) return;
+    const requestId = ++lyricSearchVersion.current;
+    const trackAtStart = activeLyricPath.current;
+    const isLive = () => requestId === lyricSearchVersion.current &&
+      activeLyricPath.current === trackAtStart;
     setSearching(true); setShowFinder(true); setResults([]);
     try {
       let query = '';
@@ -235,17 +250,23 @@ export function LyricsPanel() {
       });
 
       scored.sort((a, b) => b.score - a.score);
-      setResults(scored.map(s => s.item));
-    } catch (e) { 
-      console.error(e); 
-      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Lyric search failed: ${e}`, type: 'error' } }));
-    } finally { setSearching(false); }
+      if (isLive()) setResults(scored.map(s => s.item));
+    } catch (e) {
+      if (isLive()) {
+        console.error(e);
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Lyric search failed: ${e}`, type: 'error' } }));
+      }
+    } finally { if (isLive()) setSearching(false); }
   };
 
   const pickResult = async (r: SearchResult) => {
+    const pickId = ++lyricPickVersion.current;
+    const selectedPath = activeLyricPath.current;
+    const isLive = () => pickId === lyricPickVersion.current &&
+      activeLyricPath.current === selectedPath;
     setSearching(true);
     try {
-      if (!playbackCurrentTrack) return;
+      if (!selectedPath) return;
 
       let lrc = r.raw_lrc ?? '';
       if (!lrc && (r.source === 'BiniLyrics' || r.source === 'Better Lyrics' || r.source === 'Unison')) {
@@ -263,8 +284,9 @@ export function LyricsPanel() {
       if (!lrc && r.source === 'QQMusic' && r.content_id)
         lrc = await invoke<string>('get_qqmusic_lrc', { mid: r.content_id }).catch(() => '');
 
-      if (lrc) {
-        await saveLyrics(playbackCurrentTrack, lrc);
+      if (lrc && isLive()) {
+        await saveLyrics(selectedPath, lrc);
+        if (!isLive()) return;
 
         if (currentTrack && currentTrack.duration && r.duration) {
           const diffSec = currentTrack.duration - r.duration;
@@ -282,11 +304,13 @@ export function LyricsPanel() {
         }
       }
 
-      setShowFinder(false);
-    } catch (e) { 
-      console.error(e); 
-      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Failed to download lyric: ${e}`, type: 'error' } }));
-    } finally { setSearching(false); }
+      if (isLive()) setShowFinder(false);
+    } catch (e) {
+      if (isLive()) {
+        console.error(e);
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Failed to download lyric: ${e}`, type: 'error' } }));
+      }
+    } finally { if (isLive()) setSearching(false); }
   };
 
   return (

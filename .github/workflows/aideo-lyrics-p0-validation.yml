@@ -1,0 +1,33 @@
+name: Aideo-ZH Lyrics P0 Race Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/lyrics-p0-race-validation
+    paths:
+      - 'src/components/LyricsPanel.tsx'
+      - 'src/store/metadataSlice.ts'
+      - 'src/store/types.ts'
+      - 'src/test/lyricsP0Race.test.ts'
+      - '.github/workflows/aideo-lyrics-p0-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck-and-race:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci --ignore-scripts
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+      - name: Actual metadata slice asynchronous race regression tests
+        run: npx vitest run src/test/lyricsP0Race.test.ts --reporter=verbose

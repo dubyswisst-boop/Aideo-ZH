@@ -1,0 +1,76 @@
+{
+  "src/store/metadataSlice.ts": [
+    {
+      "old": "export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set, get) => ({",
+      "new": "// A delayed auto lookup may not supersede an explicit manual selection.\n// Versions are scoped to the store module, not persisted across restarts.\nlet lyricAutoVersion = 0;\nlet lyricManualVersion = 0;\nconst manualLyricPaths = new Set<string>();\nconst sameLyricPath = (a: string | null | undefined, b: string | null | undefined) =>\n  Boolean(a && b && pathsEqual(a, b));\n\nexport const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set, get) => ({"
+    },
+    {
+      "old": "  saveLyrics: async (path: string, lrc: string) => {\n    try {",
+      "new": "  saveLyrics: async (path: string, lrc: string, origin: 'manual' | 'auto' = 'manual') => {\n    if (origin === 'manual') {\n      lyricManualVersion += 1;\n      manualLyricPaths.add(path);\n    }\n    try {"
+    },
+    {
+      "old": "  autoFetchLyricsOnline: async (track: any) => {\n    if (!track || !track.title) return;",
+      "new": "  autoFetchLyricsOnline: async (track: any) => {\n    if (!track || !track.title || !track.path) return;\n    const requestId = ++lyricAutoVersion;\n    const manualAtStart = lyricManualVersion;\n    const validRequest = () => {\n      const state = get();\n      const active = sameLyricPath(state.currentTrack?.path, track.path)\n        || sameLyricPath(state.playback.current_track, track.path)\n        || sameLyricPath((state.currentTrack as any)?.url, track.path);\n      return active && requestId === lyricAutoVersion &&\n        manualAtStart === lyricManualVersion &&\n        ![...manualLyricPaths].some(p => pathsEqual(p, track.path));\n    };\n    if (!validRequest()) return;"
+    },
+    {
+      "old": "    set({ lyricStatus: 'loading' });\n    try {\n      const query =",
+      "new": "    if (!validRequest()) return;\n    set({ lyricStatus: 'loading' });\n    try {\n      const query ="
+    },
+    {
+      "old": "          if (lrc) {\n            await get().saveLyrics(track.path, lrc);",
+      "new": "          if (lrc) {\n            if (!validRequest()) return;\n            await get().saveLyrics(track.path, lrc, 'auto');\n            if (!validRequest()) return;"
+    },
+    {
+      "old": "            if (stillCurrent) {\n              if (Array.isArray(lines) && lines.length > 0) {",
+      "new": "            if (stillCurrent && validRequest()) {\n              if (Array.isArray(lines) && lines.length > 0) {"
+    },
+    {
+      "old": "            if (track.duration && bestMatch.duration) {\n              const diffSec =",
+      "new": "            if (validRequest() && track.duration && bestMatch.duration) {\n              const diffSec ="
+    },
+    {
+      "old": "      set({ lyricStatus: 'not_found' });\n    } catch (e) {\n      console.error('Auto lyric fetch failed:', e);\n      set({ lyricStatus: 'not_found' });",
+      "new": "      if (validRequest()) set({ lyricStatus: 'not_found' });\n    } catch (e) {\n      console.error('Auto lyric fetch failed:', e);\n      if (validRequest()) set({ lyricStatus: 'not_found' });"
+    },
+    {
+      "old": "      const lines: any = await invoke('get_lyrics', { path });\n      const currentTrack = get().currentTrack;",
+      "new": "      const manualVersionAtRead = lyricManualVersion;\n      const lines: any = await invoke('get_lyrics', { path });\n      if (origin === 'auto' && (manualVersionAtRead !== lyricManualVersion ||\n          [...manualLyricPaths].some(p => pathsEqual(p, path)))) return;\n      const currentTrack = get().currentTrack;"
+    }
+  ],
+  "src/store/types.ts": [
+    {
+      "old": "  saveLyrics: (path: string, lrc: string) => Promise<void>;",
+      "new": "  saveLyrics: (path: string, lrc: string, origin?: 'manual' | 'auto') => Promise<void>;"
+    }
+  ],
+  "src/components/LyricsPanel.tsx": [
+    {
+      "old": "  const [results, setResults] = useState<SearchResult[]>([]);",
+      "new": "  const [results, setResults] = useState<SearchResult[]>([]);\n  const lyricSearchVersion = useRef(0);\n  const lyricPickVersion = useRef(0);\n  const activeLyricPath = useRef(playbackCurrentTrack);\n  activeLyricPath.current = playbackCurrentTrack;\n  useEffect(() => {\n    lyricSearchVersion.current += 1;\n    lyricPickVersion.current += 1;\n    setResults([]);\n    setSearching(false);\n    setShowFinder(false);\n  }, [playbackCurrentTrack]);"
+    },
+    {
+      "old": "  const doSearch = async (manualQuery?: string) => {\n    if (!currentTrack && !manualQuery) return;\n    setSearching(true);",
+      "new": "  const doSearch = async (manualQuery?: string) => {\n    if (!currentTrack && !manualQuery) return;\n    const requestId = ++lyricSearchVersion.current;\n    const trackAtStart = activeLyricPath.current;\n    const isLive = () => requestId === lyricSearchVersion.current &&\n      activeLyricPath.current === trackAtStart;\n    setSearching(true);"
+    },
+    {
+      "old": "      scored.sort((a, b) => b.score - a.score);\n      setResults(scored.map(s => s.item));",
+      "new": "      scored.sort((a, b) => b.score - a.score);\n      if (isLive()) setResults(scored.map(s => s.item));"
+    },
+    {
+      "old": "    } catch (e) { \n      console.error(e); \n      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Lyric search failed: ${e}`, type: 'error' } }));\n    } finally { setSearching(false); }\n  };\n\n  const pickResult",
+      "new": "    } catch (e) {\n      if (isLive()) {\n        console.error(e);\n        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Lyric search failed: ${e}`, type: 'error' } }));\n      }\n    } finally { if (isLive()) setSearching(false); }\n  };\n\n  const pickResult"
+    },
+    {
+      "old": "  const pickResult = async (r: SearchResult) => {\n    setSearching(true);\n    try {\n      if (!playbackCurrentTrack) return;",
+      "new": "  const pickResult = async (r: SearchResult) => {\n    const pickId = ++lyricPickVersion.current;\n    const selectedPath = activeLyricPath.current;\n    const isLive = () => pickId === lyricPickVersion.current &&\n      activeLyricPath.current === selectedPath;\n    setSearching(true);\n    try {\n      if (!selectedPath) return;"
+    },
+    {
+      "old": "      if (lrc) {\n        await saveLyrics(playbackCurrentTrack, lrc);\n\n        if (currentTrack",
+      "new": "      if (lrc && isLive()) {\n        await saveLyrics(selectedPath, lrc);\n        if (!isLive()) return;\n\n        if (currentTrack"
+    },
+    {
+      "old": "      setShowFinder(false);\n    } catch (e) { \n      console.error(e); \n      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Failed to download lyric: ${e}`, type: 'error' } }));\n    } finally { setSearching(false); }\n  };",
+      "new": "      if (isLive()) setShowFinder(false);\n    } catch (e) {\n      if (isLive()) {\n        console.error(e);\n        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Failed to download lyric: ${e}`, type: 'error' } }));\n      }\n    } finally { if (isLive()) setSearching(false); }\n  };"
+    }
+  ]
+}

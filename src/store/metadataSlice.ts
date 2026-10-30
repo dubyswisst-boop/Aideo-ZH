@@ -7,6 +7,17 @@ import { safeGetStorage, safeSetStorage } from '../utils/storage';
 import { romanizeText } from '../utils/romanizer';
 import { sourceKey } from '../utils/unifiedSources';
 
+// A delayed auto lookup may not supersede an explicit manual selection.
+// Versions are scoped to the store module, not persisted across restarts.
+let lyricAutoVersion = 0;
+// Manual epochs are per song, so selecting lyrics for A does not invalidate B.
+const lyricManualEpochs = new Map<string, number>();
+const lyricSaveQueues = new Map<string, Promise<void>>();
+const lyricKey = (path: string) => path.replace(/\\/g, '/').toLowerCase();
+const getManualEpoch = (path: string) => lyricManualEpochs.get(lyricKey(path)) ?? 0;
+const sameLyricPath = (a: string | null | undefined, b: string | null | undefined) =>
+  Boolean(a && b && pathsEqual(a, b));
+
 export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set, get) => ({
   sourceRegistry: (() => {
     try {
@@ -206,26 +217,51 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
     }
   },
 
-  saveLyrics: async (path: string, lrc: string) => {
-    try {
+  saveLyrics: async (path: string, lrc: string, origin: 'manual' | 'auto' = 'manual', expectedManualEpoch?: number): Promise<boolean> => {
+    // An auto save MUST carry the epoch captured when its lookup started.
+    // Never give a late auto request the newest epoch when it reaches saveLyrics.
+    if (origin === 'auto' && (expectedManualEpoch === undefined || expectedManualEpoch !== getManualEpoch(path))) return false;
+    const key = lyricKey(path);
+    if (origin === 'manual') lyricManualEpochs.set(key, getManualEpoch(path) + 1);
+    const requestedEpoch = origin === 'auto' ? expectedManualEpoch! : getManualEpoch(path);
+    const previous = lyricSaveQueues.get(key) ?? Promise.resolve();
+    const job: Promise<boolean> = previous.catch(() => {}).then(async () => {
+      // Same-song writes are serialized. A stale write is skipped before backend I/O.
+      if (getManualEpoch(path) !== requestedEpoch) return false;
       await invoke('save_lyrics_file', { path, content: lrc });
-      // Save only to the explicitly requested track. Never copy a delayed result
-      // into whichever song happens to be playing when this await resumes.
       const lines: any = await invoke('get_lyrics', { path });
+      if (getManualEpoch(path) !== requestedEpoch) return false;
       const currentTrack = get().currentTrack;
       const playbackCurrent = get().playback.current_track;
       const trackUrl = (currentTrack as any)?.url;
       const isCurrent = pathsEqual(playbackCurrent, path)
         || pathsEqual(currentTrack?.path, path)
         || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, path) : false);
-      if (isCurrent) {
-        if (Array.isArray(lines)) set({ lyrics: sortLyricLines(lines), lyricStatus: 'found' });
+      if (isCurrent && Array.isArray(lines)) {
+        set({ lyrics: sortLyricLines(lines), lyricStatus: 'found' });
       }
-    } catch (e) { console.error(e); }
+      return true;
+    });
+    const tail = job.then(() => {}, () => {});
+    lyricSaveQueues.set(key, tail);
+    try { return await job; } catch (e) { console.error(e); return false; }
+    finally { if (lyricSaveQueues.get(key) === tail) lyricSaveQueues.delete(key); }
   },
 
   autoFetchLyricsOnline: async (track: any) => {
-    if (!track || !track.title) return;
+    if (!track || !track.title || !track.path) return;
+    const requestId = ++lyricAutoVersion;
+    const manualAtStart = getManualEpoch(track.path);
+    const validRequest = () => {
+      const state = get();
+      const active = sameLyricPath(state.currentTrack?.path, track.path)
+        || sameLyricPath(state.playback.current_track, track.path)
+        || sameLyricPath((state.currentTrack as any)?.url, track.path);
+      return active && requestId === lyricAutoVersion &&
+        manualAtStart === getManualEpoch(track.path);
+    };
+    if (!validRequest()) return;
+    if (manualAtStart > 0) return; // Manual selection wins until a deliberate refresh policy is added.
     if (get().appMode === 'local') {
       if (get().lyrics.length === 0) {
         set({ lyricStatus: 'not_found' });
@@ -237,6 +273,7 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
 
     if (!cleanTitle) return;
 
+    if (!validRequest()) return;
     set({ lyricStatus: 'loading' });
     try {
       const query = `${cleanArtist} ${cleanTitle}`.trim();
@@ -364,7 +401,9 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
         console.log('[lyrics] query=', query, 'results=', results?.length, 'bestMatch=', bestMatch?.title, 'lrc.len=', lrc?.length);
 
           if (lrc) {
-            await get().saveLyrics(track.path, lrc);
+            if (!validRequest()) return;
+            const saved = await get().saveLyrics(track.path, lrc, 'auto', manualAtStart);
+            if (!saved || !validRequest()) return;
 
             // Explicitly resolve status so it can never get stuck on 'loading'
             // if saveLyrics' internal read-back guard races with a track change.
@@ -375,7 +414,7 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
             const stillCurrent = pathsEqual(playbackCurrent, track.path)
               || pathsEqual(currentTrack?.path, track.path)
               || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, track.path) : false);
-            if (stillCurrent) {
+            if (stillCurrent && validRequest()) {
               if (Array.isArray(lines) && lines.length > 0) {
                 set({ lyrics: sortLyricLines(lines), lyricStatus: 'found' });
               } else {
@@ -383,7 +422,7 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
               }
             }
 
-            if (track.duration && bestMatch.duration) {
+            if (validRequest() && track.duration && bestMatch.duration) {
               const diffSec = track.duration - bestMatch.duration;
               if (diffSec > 2 && diffSec < 120) {
                 const calculatedMs = Math.round(diffSec * 10) * 100;
@@ -396,10 +435,10 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
             return;
           }
         }
-      set({ lyricStatus: 'not_found' });
+      if (validRequest()) set({ lyricStatus: 'not_found' });
     } catch (e) {
       console.error('Auto lyric fetch failed:', e);
-      set({ lyricStatus: 'not_found' });
+      if (validRequest()) set({ lyricStatus: 'not_found' });
     }
   },
 

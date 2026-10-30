@@ -1,0 +1,24 @@
+{
+  "src/store/metadataSlice.ts": [
+    {
+      "old": "let lyricManualVersion = 0;\nconst manualLyricPaths = new Set<string>();",
+      "new": "// Manual epochs are per song, so selecting lyrics for A does not invalidate B.\nconst lyricManualEpochs = new Map<string, number>();\nconst lyricSaveQueues = new Map<string, Promise<void>>();\nconst lyricKey = (path: string) => path.replace(/\\\\/g, '/').toLowerCase();\nconst getManualEpoch = (path: string) => lyricManualEpochs.get(lyricKey(path)) ?? 0;"
+    },
+    {
+      "old": "  saveLyrics: async (path: string, lrc: string, origin: 'manual' | 'auto' = 'manual') => {\n    if (origin === 'manual') {\n      lyricManualVersion += 1;\n      manualLyricPaths.add(path);\n    }\n    try {\n      await invoke('save_lyrics_file', { path, content: lrc });\n      // Save only to the explicitly requested track. Never copy a delayed result\n      // into whichever song happens to be playing when this await resumes.\n      const manualVersionAtRead = lyricManualVersion;\n      const lines: any = await invoke('get_lyrics', { path });\n      if (origin === 'auto' && (manualVersionAtRead !== lyricManualVersion ||\n          [...manualLyricPaths].some(p => pathsEqual(p, path)))) return;\n      const currentTrack = get().currentTrack;\n      const playbackCurrent = get().playback.current_track;\n      const trackUrl = (currentTrack as any)?.url;\n      const isCurrent = pathsEqual(playbackCurrent, path)\n        || pathsEqual(currentTrack?.path, path)\n        || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, path) : false);\n      if (isCurrent) {\n        if (Array.isArray(lines)) set({ lyrics: sortLyricLines(lines), lyricStatus: 'found' });\n      }\n    } catch (e) { console.error(e); }\n  },",
+      "new": "  saveLyrics: async (path: string, lrc: string, origin: 'manual' | 'auto' = 'manual') => {\n    // Register intent before queuing: a pending manual selection invalidates old auto work.\n    const key = lyricKey(path);\n    const epochAtRequest = getManualEpoch(path);\n    if (origin === 'manual') lyricManualEpochs.set(key, epochAtRequest + 1);\n    const requestedEpoch = getManualEpoch(path);\n    const previous = lyricSaveQueues.get(key) ?? Promise.resolve();\n    const job = previous.catch(() => {}).then(async () => {\n      // This check executes INSIDE the queue, before the irreversible backend write.\n      if (origin === 'auto' && getManualEpoch(path) !== requestedEpoch) return;\n      if (origin === 'manual' && getManualEpoch(path) !== requestedEpoch) return;\n      await invoke('save_lyrics_file', { path, content: lrc });\n      // No other writer for this path may run until readback and state update finish.\n      const lines: any = await invoke('get_lyrics', { path });\n      if (getManualEpoch(path) !== requestedEpoch) return;\n      const currentTrack = get().currentTrack;\n      const playbackCurrent = get().playback.current_track;\n      const trackUrl = (currentTrack as any)?.url;\n      const isCurrent = pathsEqual(playbackCurrent, path)\n        || pathsEqual(currentTrack?.path, path)\n        || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, path) : false);\n      if (isCurrent && Array.isArray(lines)) {\n        set({ lyrics: sortLyricLines(lines), lyricStatus: 'found' });\n      }\n    });\n    const tail = job.then(() => {}, () => {});\n    lyricSaveQueues.set(key, tail);\n    try { await job; } catch (e) { console.error(e); }\n    finally { if (lyricSaveQueues.get(key) === tail) lyricSaveQueues.delete(key); }\n  },"
+    },
+    {
+      "old": "    const manualAtStart = lyricManualVersion;",
+      "new": "    const manualAtStart = getManualEpoch(track.path);"
+    },
+    {
+      "old": "        manualAtStart === lyricManualVersion &&\n        ![...manualLyricPaths].some(p => pathsEqual(p, track.path));",
+      "new": "        manualAtStart === getManualEpoch(track.path);"
+    },
+    {
+      "old": "    if (!validRequest()) return;\n    if (get().appMode === 'local') {",
+      "new": "    if (!validRequest()) return;\n    if (manualAtStart > 0) return; // Manual selection wins until a deliberate refresh policy is added.\n    if (get().appMode === 'local') {"
+    }
+  ]
+}

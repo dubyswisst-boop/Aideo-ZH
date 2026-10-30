@@ -656,7 +656,7 @@ export interface PlayerState {
   adjustLyricOffset: (ms: number) => void;
   setLyricOffset: (ms: number) => void;
   setLyricsDisplayMode: (mode: LyricsDisplayMode) => void;
-  saveLyrics: (path: string, lrc: string) => Promise<void>;
+  saveLyrics: (path: string, lrc: string, origin?: 'manual' | 'auto', expectedManualEpoch?: number) => Promise<boolean>;
   autoFetchLyricsOnline: (track: Track) => Promise<void>;
   translateLyrics: () => Promise<void>;
   getRomaji: () => Promise<void>;
