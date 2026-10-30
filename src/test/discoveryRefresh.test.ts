@@ -45,7 +45,7 @@ describe('Discovery refresh boundaries', () => {
       window.dispatchEvent(new Event('playback-history-updated'));
     });
     const { container } = render(createElement(AideoView));
-    const refresh = await screen.findByTitle('Re-run discovery algorithm');
+    const refresh = await screen.findByTitle('重新生成音乐推荐');
     await waitFor(() => expect(refresh).toBeEnabled());
     const data = useStore.getState().discoveryData;
     act(() => useStore.getState().setActiveDiscoveryTab('recs'));
@@ -66,7 +66,7 @@ describe('Discovery refresh boundaries', () => {
 
   it('still rebuilds for manual refresh, explicit feedback, and recommendation settings', async () => {
     render(createElement(AideoView));
-    const refresh = await screen.findByTitle('Re-run discovery algorithm');
+    const refresh = await screen.findByTitle('重新生成音乐推荐');
     await waitFor(() => expect(refresh).toBeEnabled());
     fireEvent.click(refresh);
     await waitFor(() => expect(refresh).toBeEnabled());
