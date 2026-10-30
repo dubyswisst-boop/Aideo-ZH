@@ -413,11 +413,11 @@ export function NowPlayingView() {
       )}
 
       {/* Art + Meta — fixed left column */}
-      <div className="np-left" style={{ position: 'relative' }}>
+      <div className="np-left" data-tauri-drag-region style={{ position: 'relative' }}>
         {/* Sleek Floating Circle Buttons Group */}
         <div style={{
           position: 'absolute',
-          top: 24,
+          top: 48,
           left: 24,
           display: 'flex',
           gap: 10,
