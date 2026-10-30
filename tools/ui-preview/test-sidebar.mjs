@@ -56,7 +56,8 @@ try {
     !collapsedClasses.includes('sidebar-auto-expanded'),
     {sidebar:collapsed.sidebar,classes:collapsedClasses});
   await page.screenshot({path:resolve(out,'04-after-arrow-collapse.png'),fullPage:true});
-  // Use a real pointer exit after moving onto the rail; no synthetic event.
+  // An actual pointer move (not CSS-only width) is what should end the collapse guard.
+  // Move into the rail first, then physically leave it.
   await page.mouse.move(25,180);
   await page.waitForTimeout(100);
   await page.mouse.move(400,180);

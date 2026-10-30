@@ -1,6 +1,6 @@
 import { markListeningEnd } from './utils/recommendations';
 import { handleSourceFailure } from './store/sourcePlayback';
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useStore, Track } from './store';
 import { useUpdaterStore } from './store/updaterStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -189,6 +189,34 @@ function AideoApp() {
   const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);
   const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  // A collapse can emit mouseleave because the overlay shrinks under the pointer.
+  // Do not treat that geometry change as an intentional exit.
+  const sidebarCollapseGuard = useRef(false);
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      if (!sidebarCollapseGuard.current) return;
+      const rail = document.querySelector<HTMLElement>('.app-sidebar');
+      if (!rail) { sidebarCollapseGuard.current = false; return; }
+      const bounds = rail.getBoundingClientRect();
+      const inside = event.clientX >= bounds.left && event.clientX < bounds.right &&
+        event.clientY >= bounds.top && event.clientY < bounds.bottom;
+      sidebarCollapseGuard.current = false;
+      if (!inside) { setSidebarAutoVisible(false); setSidebarExpanded(false); }
+    };
+    window.addEventListener('pointermove', onPointerMove);
+    return () => window.removeEventListener('pointermove', onPointerMove);
+  }, []);
+  const toggleSidebarExpansion = () => {
+    if (sidebarExpanded) sidebarCollapseGuard.current = true;
+    else sidebarCollapseGuard.current = false;
+    setSidebarAutoVisible(true);
+    setSidebarExpanded(value => !value);
+  };
+  const onSidebarMouseLeave = () => {
+    if (sidebarCollapseGuard.current) return;
+    setSidebarAutoVisible(false);
+    setSidebarExpanded(false);
+  };
 
   useEffect(() => {
     const blockLockedTheaterInput = (event: KeyboardEvent) => {
@@ -996,7 +1024,7 @@ function AideoApp() {
     <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
       <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${sidebarExpanded ? "sidebar-auto-expanded" : ""} ${view === "fullscreen" ? "theater-active" : ""}`}>
         <div className="sidebar-hover-zone" onMouseEnter={() => setSidebarAutoVisible(true)} aria-hidden="true" />
-        <Sidebar expanded={sidebarExpanded} onToggleExpansion={() => setSidebarExpanded(value => !value)} onMouseLeave={() => { setSidebarAutoVisible(false); setSidebarExpanded(false); }} />
+        <Sidebar expanded={sidebarExpanded} onToggleExpansion={toggleSidebarExpansion} onMouseLeave={onSidebarMouseLeave} />
         {view !== "fullscreen" && <WindowChrome />}
       <main className="app-main">
         {/* Keep the core heavy views mounted to ensure buttery-smooth instant transitions without re-mounting lag */}

@@ -26,10 +26,12 @@
 </div>
 <script>
 const app=document.getElementById('app'); const edge=document.querySelector('.sidebar-hover-zone');const sidebar=document.querySelector('.app-sidebar');const toggle=document.querySelector('.sidebar-toggle-btn');
+let collapseGuard=false;
 function state(visible,expanded){app.classList.toggle('sidebar-auto-visible',visible);app.classList.toggle('sidebar-auto-expanded',expanded);app.classList.toggle('sidebar-collapsed',!expanded)}
 edge.addEventListener('mouseenter',()=>state(true,false));
-toggle.addEventListener('click',()=>state(true,!app.classList.contains('sidebar-auto-expanded')));
-sidebar.addEventListener('mouseleave',()=>state(false,false));
+toggle.addEventListener('click',()=>{const wasExpanded=app.classList.contains('sidebar-auto-expanded');collapseGuard=wasExpanded;state(true,!wasExpanded)});
+sidebar.addEventListener('mouseleave',()=>{if(collapseGuard)return;state(false,false)});
+window.addEventListener('pointermove',(event)=>{if(!collapseGuard)return;const b=sidebar.getBoundingClientRect();const inside=event.clientX>=b.left&&event.clientX<b.right&&event.clientY>=b.top&&event.clientY<b.bottom;collapseGuard=false;if(!inside)state(false,false)});
 window.fixtureSetState=state;
 </script>
 </body></html>
