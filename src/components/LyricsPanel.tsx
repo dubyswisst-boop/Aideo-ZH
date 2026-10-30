@@ -254,7 +254,7 @@ export function LyricsPanel() {
     } catch (e) {
       if (isLive()) {
         console.error(e);
-        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Lyric search failed: ${e}`, type: 'error' } }));
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `歌词搜索失败：${e}`, type: 'error' } }));
       }
     } finally { if (isLive()) setSearching(false); }
   };
@@ -294,7 +294,7 @@ export function LyricsPanel() {
             const calculatedMs = Math.round(diffSec * 10) * 100;
             setLyricOffset(calculatedMs);
             window.dispatchEvent(new CustomEvent('ui-toast', { 
-              detail: { message: `✨ Sync: Set lyric offset to +${(calculatedMs/1000).toFixed(1)}s to match video length`, type: 'info' } 
+              detail: { message: `✨ 同步：歌词偏移已设为 +${(calculatedMs/1000).toFixed(1)}秒，以匹配视频时长`, type: 'info' } 
             }));
           } else {
             setLyricOffset(0);
@@ -308,7 +308,7 @@ export function LyricsPanel() {
     } catch (e) {
       if (isLive()) {
         console.error(e);
-        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `Failed to download lyric: ${e}`, type: 'error' } }));
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: `歌词下载失败：${e}`, type: 'error' } }));
       }
     } finally { if (isLive()) setSearching(false); }
   };
@@ -327,30 +327,30 @@ export function LyricsPanel() {
             transition={{ duration: 0.2 }}
           >
             <div className="sync-controls">
-              <button className="lyric-btn" title="Make lyrics appear earlier" onClick={() => adjustLyricOffset(-100)}>–</button>
-              <div className="sync-value" onClick={() => adjustLyricOffset(-lyricOffset)} title="Click to reset">
+              <button className="lyric-btn" title="让歌词提前显示" onClick={() => adjustLyricOffset(-100)}>–</button>
+              <div className="sync-value" onClick={() => adjustLyricOffset(-lyricOffset)} title="点击重置">
                 {lyricOffset > 0 ? `+${lyricOffset}` : lyricOffset}ms
               </div>
-              <button className="lyric-btn" title="Make lyrics appear later" onClick={() => adjustLyricOffset(100)}>+</button>
+              <button className="lyric-btn" title="让歌词延后显示" onClick={() => adjustLyricOffset(100)}>+</button>
             </div>
 
-            <button className="lyric-btn" onClick={() => doSearch()}>🔍 Auto</button>
+            <button className="lyric-btn" onClick={() => doSearch()}>🔍 自动搜索</button>
             <button className="lyric-btn" onClick={() => {
               setCustomPrompt({
                 open: true,
-                title: 'Manual Lyric Search',
-                placeholder: 'Enter Artist and Track Name...',
+                title: '手动搜索歌词',
+                placeholder: '请输入歌手及歌曲名称...',
                 initialValue: `${currentTrack?.artist ?? ''} ${currentTrack?.title ?? ''}`.trim(),
-                actionLabel: 'Search Online',
+                actionLabel: '在线搜索',
                 onSubmit: (val) => doSearch(val)
               });
-            }}>🔍 Manual</button>
+            }}>🔍 手动搜索</button>
 
             <button className="lyric-btn" onClick={() => {
               const raw = lyrics.map(l => `[${fmt(l.time_secs).padStart(5, '0')}.00]${l.text}`).join('\n');
               setEditContent(raw);
               setShowEditor(true);
-            }}>Edit lyrics</button>
+            }}>编辑歌词</button>
 
             {/* Status Indicator */}
             <div style={{
@@ -365,10 +365,10 @@ export function LyricsPanel() {
                 boxShadow: lyricStatus === 'found' ? '0 0 8px #10b981' : 'none',
                 animation: lyricStatus === 'loading' ? 'pulse 1.5s infinite' : 'none'
               }} />
-              {lyricStatus === 'loading' ? 'Searching...' : lyricStatus === 'found' ? 'Synced' : lyricStatus === 'not_found' ? 'No Lyrics' : ''}
+              {lyricStatus === 'loading' ? '正在搜索…' : lyricStatus === 'found' ? '已同步' : lyricStatus === 'not_found' ? '无歌词' : ''}
             </div>
             <button className={`lyric-btn ${showTranslation && lyrics.some(l => l.translation) ? 'active' : ''}`} onClick={handleTranslateClick} disabled={isTranslating}>
-              {isTranslating ? 'Working…' : showTranslation && lyrics.some(l => l.translation) ? '🌐 Hide Translation' : '🌐 Translate'}
+              {isTranslating ? '处理中…' : showTranslation && lyrics.some(l => l.translation) ? '🌐 隐藏翻译' : '🌐 翻译歌词'}
             </button>
             <button
               className={`lyric-btn ${showRomaji ? 'active' : ''}`}
@@ -383,7 +383,7 @@ export function LyricsPanel() {
                 }
               }}
             >
-              {isTranslating ? 'Working…' : 'Romaji'}
+              {isTranslating ? '处理中…' : '罗马音'}
             </button>
             <button
               className={`lyric-btn ${lyricsDisplayMode === 'karaoke' ? 'active' : ''}`}
@@ -393,11 +393,11 @@ export function LyricsPanel() {
                   lyricsDisplayMode === 'line_sync' ? 'static' : 'karaoke';
                 setLyricsDisplayMode(nextMode);
               }}
-              title={`Display Mode: ${lyricsDisplayMode === 'karaoke' ? 'Karaoke (Word-by-word)' : lyricsDisplayMode === 'line_sync' ? 'Line Sync (Line-by-line)' : 'Static (Plain text)'} — Click to switch`}
+              title={`显示模式：${lyricsDisplayMode === 'karaoke' ? '卡拉 OK（逐字）' : lyricsDisplayMode === 'line_sync' ? '逐行同步' : '纯文本'} — 点击切换`}
             >
-              {lyricsDisplayMode === 'karaoke' && '🎤 Karaoke'}
-              {lyricsDisplayMode === 'line_sync' && '⏱️ Line Sync'}
-              {lyricsDisplayMode === 'static' && '📄 Plain Text'}
+              {lyricsDisplayMode === 'karaoke' && '🎤 逐字歌词'}
+              {lyricsDisplayMode === 'line_sync' && '⏱️ 逐行同步'}
+              {lyricsDisplayMode === 'static' && '📄 纯文本'}
             </button>
             <button
               className={`lyric-btn ${desktopLyricsOpen ? 'active' : ''}`}
@@ -406,21 +406,21 @@ export function LyricsPanel() {
                 e.preventDefault();
                 toggleDesktopLyricsLocked();
               }}
-              title={desktopLyricsOpen ? (desktopLyricsLocked ? "Desktop Lyrics: Locked (Right-click to Unlock)" : "Desktop Lyrics: Open (Right-click to Lock)") : "Open Floating Desktop Lyric Bar"}
+              title={desktopLyricsOpen ? (desktopLyricsLocked ? "桌面歌词：已锁定（右键解锁）" : "桌面歌词：已开启（右键锁定）") : "打开桌面歌词悬浮栏"}
               style={{ display: 'flex', alignItems: 'center', gap: 5 }}
             >
               <Tv2 size={13} />
-              <span>Floating Bar</span>
+              <span>桌面歌词悬浮栏</span>
             </button>
 
-            {/* Hide Header Button */}
+            {/* 隐藏工具栏 Button */}
             <button
               className="lyric-btn lyric-header-hide-btn"
               onClick={toggleLyricsHeader}
-              title="Hide lyric section header and controls"
+              title="隐藏歌词工具栏和控制项"
             >
               <ChevronUp size={13} />
-              <span>Hide Header</span>
+              <span>隐藏工具栏</span>
             </button>
           </motion.div>
         ) : (
@@ -428,14 +428,14 @@ export function LyricsPanel() {
             key="lyrics-reveal-btn"
             className="lyric-header-reveal-btn"
             onClick={toggleLyricsHeader}
-            title="Show lyric section header and controls"
+            title="显示歌词工具栏和控制项"
             initial={{ opacity: 0, scale: 0.9, y: -5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -5 }}
             transition={{ duration: 0.2 }}
           >
             <ChevronDown size={13} />
-            <span>Show Header</span>
+            <span>显示工具栏</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -455,33 +455,33 @@ export function LyricsPanel() {
               {lyricStatus === 'loading' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                   <RefreshCw size={32} className="spin" style={{ color: 'var(--accent)' }} />
-                  <div style={{ fontSize: 14 }}>Fetching lyrics...</div>
+                  <div style={{ fontSize: 14 }}>正在获取歌词…</div>
                   {showFallbackSearch && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 12 }}>
                       <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                        Taking longer than expected. Search online or edit:
+                        搜索时间较长，可以在线搜索或手动编辑：
                       </div>
                       <div style={{ display: 'flex', gap: 12 }}>
                         <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => doSearch()}>
-                          🔍 Auto
+                          🔍 自动搜索
                         </button>
                         <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => {
                           setCustomPrompt({
                             open: true,
-                            title: 'Manual Lyric Search',
-                            placeholder: 'Enter Artist and Track Name...',
+                            title: '手动搜索歌词',
+                            placeholder: '请输入歌手及歌曲名称...',
                             initialValue: `${currentTrack?.artist ?? ''} ${currentTrack?.title ?? ''}`.trim(),
-                            actionLabel: 'Search Online',
+                            actionLabel: '在线搜索',
                             onSubmit: (val) => doSearch(val)
                           });
                         }}>
-                          🔍 Manual
+                          🔍 手动搜索
                         </button>
                         <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => {
                           setEditContent('');
                           setShowEditor(true);
                         }}>
-                          Edit lyrics
+                          编辑歌词
                         </button>
                       </div>
                     </div>
@@ -490,24 +490,24 @@ export function LyricsPanel() {
               ) : lyricStatus === 'not_found' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                   <X size={32} style={{ color: '#ef4444' }} />
-                  <div style={{ fontSize: 14 }}>No lyrics found.</div>
+                  <div style={{ fontSize: 14 }}>未找到歌词。</div>
                   <div style={{ display: 'flex', gap: 12 }}>
-                    <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => doSearch()}>🔍 Auto</button>
+                    <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => doSearch()}>🔍 自动搜索</button>
                     <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => {
                       setCustomPrompt({
                         open: true,
-                        title: 'Manual Lyric Search',
-                        placeholder: 'Enter Artist and Track Name...',
+                        title: '手动搜索歌词',
+                        placeholder: '请输入歌手及歌曲名称...',
                         initialValue: `${currentTrack?.artist ?? ''} ${currentTrack?.title ?? ''}`.trim(),
-                        actionLabel: 'Search Online',
+                        actionLabel: '在线搜索',
                         onSubmit: (val) => doSearch(val)
                       });
-                    }}>🔍 Manual</button>
-                    <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => { setEditContent(''); setShowEditor(true); }}>Edit lyrics</button>
+                    }}>🔍 手动搜索</button>
+                    <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => { setEditContent(''); setShowEditor(true); }}>编辑歌词</button>
                   </div>
                 </div>
               ) : (
-                <>No lyrics. Click <strong>Finder</strong> to search online.</>
+                <>暂无歌词。点击<strong>搜索歌词</strong>在线查找。</>
               )}
             </div>
           ) : (
@@ -554,19 +554,19 @@ export function LyricsPanel() {
         </div>
       </div>
 
-      {/* Lyric Finder Modal */}
+      {/* 歌词搜索 Modal */}
       <AnimatePresence>
         {showFinder && (
           <div className="modal-overlay" onClick={() => setShowFinder(false)}>
             <motion.div className="modal-box" onClick={e => e.stopPropagation()}
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}>
               <div className="modal-header">
-                <h3>Lyric Finder</h3>
+                <h3>歌词搜索</h3>
                 <button className="modal-close" onClick={() => setShowFinder(false)}>✕</button>
               </div>
               <div className="modal-body">
-                {searching && results.length === 0 && <div className="modal-empty">Searching…</div>}
-                {!searching && results.length === 0 && <div className="modal-empty">No results found.</div>}
+                {searching && results.length === 0 && <div className="modal-empty">正在搜索…</div>}
+                {!searching && results.length === 0 && <div className="modal-empty">未找到搜索结果。</div>}
                 {results.map((r, i) => (
                   <div key={i} className="modal-item" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '12px 16px', borderRadius: 8, transition: 'background 0.2s' }}
                     onClick={() => pickResult(r)}
@@ -576,10 +576,10 @@ export function LyricsPanel() {
                       <div className="modal-item-title" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span>{r.title}</span>
                         {r.duration && currentTrack?.duration && Math.abs(currentTrack.duration - r.duration) <= 2 && (
-                          <span style={{ padding: '1px 5px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>Matches Duration</span>
+                          <span style={{ padding: '1px 5px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>时长匹配</span>
                         )}
                         {r.duration && currentTrack?.duration && currentTrack.duration > r.duration + 2 && currentTrack.duration < r.duration + 120 && (
-                          <span style={{ padding: '1px 5px', background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>Suggests +{(currentTrack.duration - r.duration).toFixed(1)}s offset</span>
+                          <span style={{ padding: '1px 5px', background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>建议偏移 +{(currentTrack.duration - r.duration).toFixed(1)}秒</span>
                         )}
                       </div>
                       <div className="modal-item-sub">
@@ -590,7 +590,7 @@ export function LyricsPanel() {
                     <div>
                       <button className="btn btn-primary" style={{ fontSize: 10, padding: '6px 12px' }}
                         onClick={(e) => { e.stopPropagation(); pickResult(r); }}>
-                        🎵 Select
+                        🎵 选择
                       </button>
                     </div>
                   </div>
@@ -610,27 +610,27 @@ export function LyricsPanel() {
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}>
               <div className="modal-header">
                 <div>
-                  <h3 style={{ margin: 0 }}>Edit lyrics</h3>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>Paste your LRC text or synchronized lyrics below.</div>
+                  <h3 style={{ margin: 0 }}>编辑歌词</h3>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>请在下方粘贴 LRC 或同步歌词文本。</div>
                 </div>
                 <button className="modal-close" onClick={() => setShowEditor(false)}>✕</button>
               </div>
               <div className="modal-body" style={{ padding: 0 }}>
                 <textarea
                   className="studio-editor"
-                  placeholder="Paste lyrics here..."
+                  placeholder="在此粘贴歌词…"
                   value={editContent}
                   onChange={e => setEditContent(e.target.value)}
                 />
               </div>
               <div className="modal-footer" style={{ padding: '0 24px 24px', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                <button className="btn btn-secondary" style={{ width: 'auto', padding: '10px 24px' }} onClick={() => setShowEditor(false)}>Cancel</button>
+                <button className="btn btn-secondary" style={{ width: 'auto', padding: '10px 24px' }} onClick={() => setShowEditor(false)}>取消</button>
                 <button className="btn btn-primary" style={{ width: 'auto', padding: '10px 32px' }} onClick={async () => {
                   if (playbackCurrentTrack) {
                     await saveLyrics(playbackCurrentTrack, editContent);
                     setShowEditor(false);
                   }
-                }}>Save to File</button>
+                }}>保存到文件</button>
               </div>
             </motion.div>
           </div>

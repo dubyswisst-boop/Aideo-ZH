@@ -1,0 +1,261 @@
+{
+  "base_sha256": "87b0b793f79ac253b84724fbc47d8baa47dc938aad4bdc0b2b9f651a4172f7ca",
+  "target": "src/components/LyricsPanel.tsx",
+  "replacements": [
+    {
+      "old": "Make lyrics appear earlier",
+      "new": "让歌词提前显示",
+      "count": 1
+    },
+    {
+      "old": "Click to reset",
+      "new": "点击重置",
+      "count": 1
+    },
+    {
+      "old": "Make lyrics appear later",
+      "new": "让歌词延后显示",
+      "count": 1
+    },
+    {
+      "old": "🔍 Auto",
+      "new": "🔍 自动搜索",
+      "count": 3
+    },
+    {
+      "old": "🔍 Manual",
+      "new": "🔍 手动搜索",
+      "count": 3
+    },
+    {
+      "old": "title: 'Manual Lyric Search'",
+      "new": "title: '手动搜索歌词'",
+      "count": 3
+    },
+    {
+      "old": "placeholder: 'Enter Artist and Track Name...'",
+      "new": "placeholder: '请输入歌手及歌曲名称...'",
+      "count": 3
+    },
+    {
+      "old": "actionLabel: 'Search Online'",
+      "new": "actionLabel: '在线搜索'",
+      "count": 3
+    },
+    {
+      "old": "Edit lyrics",
+      "new": "编辑歌词",
+      "count": 4
+    },
+    {
+      "old": "Searching...",
+      "new": "正在搜索…",
+      "count": 1
+    },
+    {
+      "old": "No Lyrics",
+      "new": "无歌词",
+      "count": 1
+    },
+    {
+      "old": "Synced",
+      "new": "已同步",
+      "count": 1
+    },
+    {
+      "old": "🌐 Hide Translation",
+      "new": "🌐 隐藏翻译",
+      "count": 1
+    },
+    {
+      "old": "🌐 Translate",
+      "new": "🌐 翻译歌词",
+      "count": 1
+    },
+    {
+      "old": "Working…",
+      "new": "处理中…",
+      "count": 2
+    },
+    {
+      "old": "'Romaji'",
+      "new": "'罗马音'",
+      "count": 1
+    },
+    {
+      "old": "Display Mode: ",
+      "new": "显示模式：",
+      "count": 1
+    },
+    {
+      "old": "Karaoke (Word-by-word)",
+      "new": "卡拉 OK（逐字）",
+      "count": 1
+    },
+    {
+      "old": "Line Sync (Line-by-line)",
+      "new": "逐行同步",
+      "count": 1
+    },
+    {
+      "old": "Static (Plain text)",
+      "new": "纯文本",
+      "count": 1
+    },
+    {
+      "old": " — Click to switch",
+      "new": " — 点击切换",
+      "count": 1
+    },
+    {
+      "old": "🎤 Karaoke",
+      "new": "🎤 逐字歌词",
+      "count": 1
+    },
+    {
+      "old": "⏱️ Line Sync",
+      "new": "⏱️ 逐行同步",
+      "count": 1
+    },
+    {
+      "old": "📄 Plain Text",
+      "new": "📄 纯文本",
+      "count": 1
+    },
+    {
+      "old": "Desktop Lyrics: Locked (Right-click to Unlock)",
+      "new": "桌面歌词：已锁定（右键解锁）",
+      "count": 1
+    },
+    {
+      "old": "Desktop Lyrics: Open (Right-click to Lock)",
+      "new": "桌面歌词：已开启（右键锁定）",
+      "count": 1
+    },
+    {
+      "old": "Open Floating Desktop Lyric Bar",
+      "new": "打开桌面歌词悬浮栏",
+      "count": 1
+    },
+    {
+      "old": "Floating Bar",
+      "new": "桌面歌词悬浮栏",
+      "count": 1
+    },
+    {
+      "old": "Hide lyric section header and controls",
+      "new": "隐藏歌词工具栏和控制项",
+      "count": 1
+    },
+    {
+      "old": "Show lyric section header and controls",
+      "new": "显示歌词工具栏和控制项",
+      "count": 1
+    },
+    {
+      "old": "Hide Header",
+      "new": "隐藏工具栏",
+      "count": 2
+    },
+    {
+      "old": "Show Header",
+      "new": "显示工具栏",
+      "count": 1
+    },
+    {
+      "old": "Fetching lyrics...",
+      "new": "正在获取歌词…",
+      "count": 1
+    },
+    {
+      "old": "Taking longer than expected. Search online or edit:",
+      "new": "搜索时间较长，可以在线搜索或手动编辑：",
+      "count": 1
+    },
+    {
+      "old": "No lyrics found.",
+      "new": "未找到歌词。",
+      "count": 1
+    },
+    {
+      "old": "No lyrics. Click <strong>Finder</strong> to search online.",
+      "new": "暂无歌词。点击<strong>搜索歌词</strong>在线查找。",
+      "count": 1
+    },
+    {
+      "old": "Lyric Finder",
+      "new": "歌词搜索",
+      "count": 2
+    },
+    {
+      "old": "Searching…",
+      "new": "正在搜索…",
+      "count": 1
+    },
+    {
+      "old": "No results found.",
+      "new": "未找到搜索结果。",
+      "count": 1
+    },
+    {
+      "old": "Matches Duration",
+      "new": "时长匹配",
+      "count": 1
+    },
+    {
+      "old": "Suggests +",
+      "new": "建议偏移 +",
+      "count": 1
+    },
+    {
+      "old": "s offset",
+      "new": "秒",
+      "count": 1
+    },
+    {
+      "old": "🎵 Select",
+      "new": "🎵 选择",
+      "count": 1
+    },
+    {
+      "old": "Paste your LRC text or synchronized lyrics below.",
+      "new": "请在下方粘贴 LRC 或同步歌词文本。",
+      "count": 1
+    },
+    {
+      "old": "Paste lyrics here...",
+      "new": "在此粘贴歌词…",
+      "count": 1
+    },
+    {
+      "old": ">Cancel</button>",
+      "new": ">取消</button>",
+      "count": 1
+    },
+    {
+      "old": ">Save to File</button>",
+      "new": ">保存到文件</button>",
+      "count": 1
+    },
+    {
+      "old": "Lyric search failed: ",
+      "new": "歌词搜索失败：",
+      "count": 1
+    },
+    {
+      "old": "Failed to download lyric: ",
+      "new": "歌词下载失败：",
+      "count": 1
+    },
+    {
+      "old": "✨ Sync: Set lyric offset to +",
+      "new": "✨ 同步：歌词偏移已设为 +",
+      "count": 1
+    },
+    {
+      "old": "s to match video length",
+      "new": "秒，以匹配视频时长",
+      "count": 1
+    }
+  ]
+}
