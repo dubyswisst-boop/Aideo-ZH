@@ -730,8 +730,9 @@ function AideoApp() {
       if (isCancelled) { uDesktopLock(); return; }
       cleanups.push(uDesktopLock);
 
+      let theaterLockTransitionPending = false;
       const uTheaterLock = await listen('toggle-theater-lock', async () => {
-        if (isCancelled) return;
+        if (isCancelled || theaterLockTransitionPending) return;
         if (useStore.getState().view !== 'fullscreen') {
           window.dispatchEvent(new CustomEvent('ui-toast', {
             detail: { message: '请先进入 Now Playing 的影院全屏界面。', type: 'warning' }
@@ -740,16 +741,20 @@ function AideoApp() {
         }
         const locked = localStorage.getItem('aideo-theater-locked') === 'true';
         const next = !locked;
+        theaterLockTransitionPending = true;
         try {
           await invoke('set_theater_lock', { locked: next });
+          if (isCancelled) return;
           localStorage.setItem('aideo-theater-locked', String(next));
           window.dispatchEvent(new CustomEvent('ui-toast', {
             detail: { message: next ? '影院已锁定到底层。按相同快捷键即可解锁。' : '影院锁定已解除。', type: 'info' }
           }));
         } catch (error) {
-          window.dispatchEvent(new CustomEvent('ui-toast', {
+          if (!isCancelled) window.dispatchEvent(new CustomEvent('ui-toast', {
             detail: { message: `影院锁定失败：${String(error)}`, type: 'error' }
           }));
+        } finally {
+          theaterLockTransitionPending = false;
         }
       });
       if (isCancelled) { uTheaterLock(); return; }

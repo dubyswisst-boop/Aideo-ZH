@@ -43,28 +43,54 @@ impl HotkeyAction {
 /// Registers (or re-registers) a set of global shortcuts.
 /// `bindings` maps action id -> accelerator string (e.g. "Ctrl+Alt+Right").
 /// Empty bindings unregister the action.
-pub fn apply_shortcuts(app: &AppHandle, bindings: &[(String, Option<String>)]) -> Result<(), String> {
+fn register_bindings(app: &AppHandle, bindings: &[(String, Option<String>)]) -> Result<(), String> {
     let gs = app.global_shortcut();
-
-    // Unregister everything first so re-apply is idempotent and handles conflicts.
-    let _ = gs.unregister_all();
-
-    for (action_id, accel) in bindings {
-        let Some(accel) = accel.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()) else {
+    for (action_id, accelerator) in bindings {
+        let Some(accel) = accelerator.as_deref().map(str::trim).filter(|v| !v.is_empty()) else {
             continue;
         };
         let action = HotkeyAction::from_id(action_id)
             .ok_or_else(|| format!("Unknown hotkey action: {}", action_id))?;
-        gs.on_shortcut(accel, move |handle, _sc, event| {
+        gs.on_shortcut(accel, move |handle, _shortcut, event| {
             if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
                 let _ = handle.emit(action.event_name(), ());
             }
-        })
-        .map_err(|e| format!("Failed to register '{}': {}", accel, e))?;
+        }).map_err(|e| format!("Failed to register '{}' for {}: {}", accel, action_id, e))?;
     }
     Ok(())
 }
 
+fn validate_bindings(bindings: &[(String, Option<String>)]) -> Result<(), String> {
+    let mut registered = std::collections::HashMap::<String, String>::new();
+    for (action, value) in bindings {
+        let Some(accel) = value.as_deref().map(str::trim).filter(|v| !v.is_empty()) else { continue; };
+        HotkeyAction::from_id(action).ok_or_else(|| format!("Unknown hotkey action: {}", action))?;
+        let normalized = accel.to_ascii_lowercase().replace(' ', "");
+        if let Some(existing) = registered.insert(normalized, action.clone()) {
+            return Err(format!("Shortcut conflict: {} and {} both use {}", existing, action, accel));
+        }
+    }
+    Ok(())
+}
+
+pub fn apply_shortcuts(app: &AppHandle, bindings: &[(String, Option<String>)]) -> Result<(), String> {
+    static ACTIVE: std::sync::OnceLock<std::sync::Mutex<Vec<(String, Option<String>)>>> = std::sync::OnceLock::new();
+    validate_bindings(bindings)?;
+    let active = ACTIVE.get_or_init(|| std::sync::Mutex::new(Vec::new()));
+    let mut guard = active.lock().map_err(|_| "Global shortcut state poisoned".to_string())?;
+    let previous = guard.clone();
+    let gs = app.global_shortcut();
+    gs.unregister_all().map_err(|e| format!("Cannot clear old global shortcuts: {}", e))?;
+    if let Err(error) = register_bindings(app, bindings) {
+        let _ = gs.unregister_all();
+        if let Err(rollback) = register_bindings(app, &previous) {
+            return Err(format!("{}; restore of previous shortcuts also failed: {}", error, rollback));
+        }
+        return Err(error);
+    }
+    *guard = bindings.to_vec();
+    Ok(())
+}
 #[cfg(test)]
 mod tests {
     use super::*;

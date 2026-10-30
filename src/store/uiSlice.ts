@@ -80,6 +80,8 @@ const getSavedShortcuts = () => {
   return defaults;
 };
 
+let globalHotkeyUpdateQueue: Promise<void> = Promise.resolve();
+
 const getSavedGlobalHotkeys = (): Record<string, string | null> => {
   const defaults: Record<string, string | null> = {
     playPause: 'Ctrl+Alt+P',
@@ -642,17 +644,21 @@ export const createUISlice: StateCreator<PlayerState, [], [], any> = (set, get) 
   },
 
   setGlobalHotkey: (action: string, binding: string | null) => {
-    const next = { ...get().globalHotkeys, [action]: binding };
-    safeSetStorage('aideo-global-hotkeys', JSON.stringify(next));
-    set({ globalHotkeys: next });
-    const payload: Record<string, string | null> = {};
-    Object.entries(next).forEach(([k, v]) => {
-      payload[k] = v && v.length > 0 ? v : null;
-    });
-    invoke('set_global_shortcuts', { bindings: payload }).catch(e => {
+    // Queue updates: the native registration must succeed before persisting a binding.
+    globalHotkeyUpdateQueue = globalHotkeyUpdateQueue.then(async () => {
+      const next = { ...get().globalHotkeys, [action]: binding };
+      const payload: Record<string, string | null> = {};
+      Object.entries(next).forEach(([k, v]) => { payload[k] = v && v.length > 0 ? v : null; });
+      await invoke('set_global_shortcuts', { bindings: payload });
+      safeSetStorage('aideo-global-hotkeys', JSON.stringify(next));
+      set({ globalHotkeys: next });
+      window.dispatchEvent(new CustomEvent('ui-toast', {
+        detail: { message: binding ? `全局快捷键已设置为 ${binding}` : '已清除全局快捷键', type: 'success' }
+      }));
+    }).catch(e => {
       console.error('Failed to apply global shortcut:', e);
       window.dispatchEvent(new CustomEvent('ui-toast', {
-        detail: { message: `全局快捷键注册失败：${e}`, type: 'error' }
+        detail: { message: `全局快捷键注册失败或存在系统占用：${e}；原设置已保留`, type: 'error' }
       }));
     });
   },

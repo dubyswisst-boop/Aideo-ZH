@@ -684,9 +684,7 @@ export function SettingsView() {
       if (e.key === 'Backspace') {
         setGlobalHotkey(recordingGlobalAction, null);
         setRecordingGlobalAction(null);
-        window.dispatchEvent(new CustomEvent('ui-toast', {
-          detail: { message: '已清除全局快捷键', type: 'info' }
-        }));
+
         return;
       }
       const parts: string[] = [];
@@ -715,9 +713,7 @@ export function SettingsView() {
       }
       setGlobalHotkey(recordingGlobalAction, binding);
       setRecordingGlobalAction(null);
-      window.dispatchEvent(new CustomEvent('ui-toast', {
-        detail: { message: `全局快捷键已设置为 ${binding}`, type: 'success' }
-      }));
+
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
