@@ -5,8 +5,10 @@ on:
   push:
     paths:
       - 'src/App.css'
+      - 'src/App.tsx'
       - 'src/components/Sidebar.tsx'
       - 'src/test/sidebarComponentState.test.tsx'
+      - 'src/test/sidebarAppWiring.test.ts'
       - 'tools/ui-preview/**'
       - '.github/workflows/aideo-zh-ui-preview.yml'
 
@@ -52,5 +54,5 @@ jobs:
           cache: npm
       - name: Install app dependencies
         run: npm ci --ignore-scripts
-      - name: Run real Sidebar component interaction tests
-        run: npx vitest run src/test/sidebarComponentState.test.tsx src/test/i18nUi.test.tsx
+      - name: Run actual Sidebar and App source-wiring tests
+        run: npx vitest run src/test/sidebarAppWiring.test.ts src/test/sidebarComponentState.test.tsx src/test/i18nUi.test.tsx
