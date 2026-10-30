@@ -44,12 +44,30 @@ try {
   check('Main content does not reflow',Math.abs(before.main.x-full.main.x)<3&&Math.abs(before.main.w-full.main.w)<3,{before:before.main,after:full.main});
   check('Sidebar overlays player bar',Number(full.sidebar.z)>Number(full.player.z||0),{sidebarZ:full.sidebar.z,playerZ:full.player.z});
   await page.screenshot({path:resolve(out,'03-expanded-overlay.png'),fullPage:true});
+  // Clicking the real arrow must keep state 1 (rail) visible until the pointer leaves.
   await page.locator('.sidebar-toggle-btn').click();await page.waitForTimeout(400);
   const collapsed=await get();
-  check('Arrow collapses to icon rail',collapsed.sidebar.w>=44&&collapsed.sidebar.w<=58,collapsed.sidebar);
-  await page.evaluate(()=>document.querySelector('.app-sidebar').dispatchEvent(new MouseEvent('mouseleave')));await page.waitForTimeout(400);
+  const collapsedClasses=await page.locator('#app').getAttribute('class');
+  check('Arrow collapses to visible icon rail',
+    collapsed.sidebar.w>=44&&collapsed.sidebar.w<=58&&
+    collapsed.sidebar.x>=-1&&collapsed.sidebar.visibility==='visible'&&
+    Number(collapsed.sidebar.opacity)>0.9&&
+    collapsedClasses.includes('sidebar-auto-visible')&&
+    !collapsedClasses.includes('sidebar-auto-expanded'),
+    {sidebar:collapsed.sidebar,classes:collapsedClasses});
+  await page.screenshot({path:resolve(out,'04-after-arrow-collapse.png'),fullPage:true});
+  // Use a real pointer exit after moving onto the rail; no synthetic event.
+  await page.mouse.move(25,180);
+  await page.waitForTimeout(100);
+  await page.mouse.move(400,180);
+  await page.waitForTimeout(400);
   const hidden=await get();
-  check('Mouse leave hides sidebar',hidden.sidebar.visibility==='hidden'||Number(hidden.sidebar.opacity)<0.1,hidden.sidebar);
+  const hiddenClasses=await page.locator('#app').getAttribute('class');
+  check('Real mouse leave hides sidebar',
+    (hidden.sidebar.visibility==='hidden'||Number(hidden.sidebar.opacity)<0.1)&&
+    !hiddenClasses.includes('sidebar-auto-visible'),
+    {sidebar:hidden.sidebar,classes:hiddenClasses});
+  await page.screenshot({path:resolve(out,'05-after-mouse-leave.png'),fullPage:true});
 } catch(e){check('Browser test infrastructure',false,String(e?.stack||e));}
 finally { await writeFile(resolve(out,'results.json'),JSON.stringify(report,null,2));if(browser)await browser.close();await new Promise(r=>server.close(r)); }
 if(report.checks.some(c=>!c.pass))process.exitCode=1;
