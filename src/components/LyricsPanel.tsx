@@ -14,7 +14,7 @@ export function LyricsPanel() {
   const {
     currentTrack, lyrics, lyricOffset, lyricStatus, lyricsDisplayMode,
     setLyricsDisplayMode, seek, adjustLyricOffset, setLyricOffset, saveLyrics,
-    translateLyrics, getRomaji, isTranslating, showRomaji, setShowRomaji,
+    translateLyrics, getRomaji, invalidateLyricProcessing, isTranslating, lyricProcessingMode, showRomaji, setShowRomaji,
     showTranslation, setShowTranslation, showLyricsHeader, toggleLyricsHeader,
     setCustomPrompt, desktopLyricsOpen, toggleDesktopLyrics, desktopLyricsLocked,
     toggleDesktopLyricsLocked,
@@ -37,7 +37,9 @@ export function LyricsPanel() {
     saveLyrics: s.saveLyrics,
     translateLyrics: s.translateLyrics,
     getRomaji: s.getRomaji,
+    invalidateLyricProcessing: s.invalidateLyricProcessing,
     isTranslating: s.isTranslating,
+    lyricProcessingMode: s.lyricProcessingMode,
     showRomaji: s.showRomaji,
     setShowRomaji: s.setShowRomaji,
     showTranslation: s.showTranslation,
@@ -51,13 +53,21 @@ export function LyricsPanel() {
     toggleDesktopLyricsLocked: s.toggleDesktopLyricsLocked,
   })));
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoAttempted = useRef(new Set<string>());
+  const previousProcessingTrack = useRef(playbackCurrentTrack);
+  useEffect(() => {
+    if (previousProcessingTrack.current !== playbackCurrentTrack) {
+      previousProcessingTrack.current = playbackCurrentTrack;
+      invalidateLyricProcessing();
+    }
+  }, [playbackCurrentTrack, invalidateLyricProcessing]);
 
   const handleTranslateClick = async () => {
     const hasTranslation = lyrics.some(l => l.translation);
     if (!hasTranslation && lyrics.length > 0) {
       try {
         await translateLyrics();
-        setShowTranslation(true);
+        if (useStore.getState().lyrics.some(l => l.translation)) setShowTranslation(true);
       } catch (err) {
         console.error('Translation error:', err);
       }
@@ -69,34 +79,25 @@ export function LyricsPanel() {
   // Auto Translation & Romaji on track change / startup when user has toggle enabled
   useEffect(() => {
     if (!currentTrack || lyrics.length === 0 || isTranslating) return;
-
-    const checkAndFetch = async () => {
-      if (showTranslation) {
-        const hasTranslation = lyrics.some(l => l.translation);
-        if (!hasTranslation) {
-          try {
-            await translateLyrics();
-          } catch (err) {
-            console.error('Auto-translation failed:', err);
-          }
-          return;
-        }
+    const path = playbackCurrentTrack || currentTrack.path;
+    if (!path) return;
+    const key = `${path}|${lyrics.length}`;
+    if (showTranslation && !lyrics.some(l => l.translation)) {
+      const attempt = `translation|${key}`;
+      if (!autoAttempted.current.has(attempt)) {
+        autoAttempted.current.add(attempt);
+        void translateLyrics();
       }
-
-      if (showRomaji) {
-        const hasRomaji = lyrics.some(l => l.romaji);
-        if (!hasRomaji) {
-          try {
-            await getRomaji();
-          } catch (err) {
-            console.error('Auto-romaji failed:', err);
-          }
-        }
+      return;
+    }
+    if (showRomaji && !lyrics.some(l => l.romaji)) {
+      const attempt = `romaji|${key}`;
+      if (!autoAttempted.current.has(attempt)) {
+        autoAttempted.current.add(attempt);
+        void getRomaji();
       }
-    };
-
-    checkAndFetch();
-  }, [currentTrack?.path, lyrics.length, showRomaji, showTranslation, isTranslating]);
+    }
+  }, [currentTrack?.path, playbackCurrentTrack, lyrics.length, showRomaji, showTranslation, isTranslating]);
 
   const [userScrolling, setUserScrolling] = useState(false);
   const userScrollTimer = useRef<number | null>(null);
@@ -368,7 +369,7 @@ export function LyricsPanel() {
               {lyricStatus === 'loading' ? '正在搜索…' : lyricStatus === 'found' ? '已同步' : lyricStatus === 'not_found' ? '无歌词' : ''}
             </div>
             <button className={`lyric-btn ${showTranslation && lyrics.some(l => l.translation) ? 'active' : ''}`} onClick={handleTranslateClick} disabled={isTranslating}>
-              {isTranslating ? '处理中…' : showTranslation && lyrics.some(l => l.translation) ? '🌐 隐藏翻译' : '🌐 翻译歌词'}
+              {lyricProcessingMode === 'translation' ? '处理中…' : showTranslation && lyrics.some(l => l.translation) ? '🌐 隐藏翻译' : '🌐 翻译歌词'}
             </button>
             <button
               className={`lyric-btn ${showRomaji ? 'active' : ''}`}
@@ -377,13 +378,13 @@ export function LyricsPanel() {
                 const hasRomaji = lyrics.some(l => l.romaji);
                 if (!hasRomaji && lyrics.length > 0) {
                   await getRomaji();
-                  setShowRomaji(true);
+                  if (useStore.getState().lyrics.some(l => l.romaji)) setShowRomaji(true);
                 } else {
                   setShowRomaji(!showRomaji);
                 }
               }}
             >
-              {isTranslating ? '处理中…' : '罗马音'}
+              {lyricProcessingMode === 'romaji' ? '处理中…' : '罗马音'}
             </button>
             <button
               className={`lyric-btn ${lyricsDisplayMode === 'karaoke' ? 'active' : ''}`}

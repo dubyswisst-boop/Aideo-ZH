@@ -262,7 +262,10 @@ async fn translate_lyrics_batch(lines: Vec<String>) -> Result<Vec<(String, Strin
         });
     }
 
-    let results = futures::future::join_all(tasks).await;
+    let results = tokio::time::timeout(
+        std::time::Duration::from_secs(90),
+        futures::future::join_all(tasks),
+    ).await.map_err(|_| \
     Ok(results)
 }
 

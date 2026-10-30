@@ -10,6 +10,23 @@ import { sourceKey } from '../utils/unifiedSources';
 // A delayed auto lookup may not supersede an explicit manual selection.
 // Versions are scoped to the store module, not persisted across restarts.
 let lyricAutoVersion = 0;
+let lyricProcessingVersion = 0;
+let lyricProcessingTrackPath: string | null = null;
+const LYRIC_PROCESSING_TIMEOUT_MS = 90000;
+
+async function withLyricProcessingTimeout<T>(task: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Lyric processing timed out')), LYRIC_PROCESSING_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
 // Manual epochs are per song, so selecting lyrics for A does not invalidate B.
 const lyricManualEpochs = new Map<string, number>();
 const lyricSaveQueues = new Map<string, Promise<void>>();
@@ -154,6 +171,7 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
     }
   })(),
   isTranslating: false,
+  lyricProcessingMode: null,
   showRomaji: safeGetStorage('aideo-show-romaji') === 'true',
   showTranslation: safeGetStorage('aideo-show-translation') === 'true',
   showLyricsHeader: safeGetStorage('aideo-show-lyrics-header') !== 'false',
@@ -442,82 +460,93 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
     }
   },
 
+  invalidateLyricProcessing: () => {
+    // Invalidate in-flight tasks on track change; stale completions cannot affect the next track.
+    lyricProcessingVersion += 1;
+    lyricProcessingTrackPath = null;
+    set({ isTranslating: false, lyricProcessingMode: null });
+  },
+
   translateLyrics: async () => {
     const { lyrics, playback } = get();
-    if (!playback.current_track || lyrics.length === 0) return;
-    set({ isTranslating: true });
+    const trackPath = playback.current_track;
+    if (!trackPath || lyrics.length === 0) return;
+    if (get().isTranslating && sameLyricPath(lyricProcessingTrackPath, trackPath)) return;
+    // Stale task for another track must never block this one.
+    const version = ++lyricProcessingVersion;
+    lyricProcessingTrackPath = trackPath;
+    set({ isTranslating: true, lyricProcessingMode: 'translation' });
     try {
-      const trackPath = playback.current_track;
       const texts = lyrics.map(l => l.text || '');
-      let batchResults: [string, string][] = [];
-      try {
-        batchResults = await invoke<[string, string][]>('translate_lyrics_batch', { lines: texts });
-      } catch (err) {
-        console.error('Batch translation invoke failed:', err);
-      }
-
+      const batchResults = await withLyricProcessingTimeout(
+        invoke<[string, string][]>('translate_lyrics_batch', { lines: texts })
+      );
+      if (version !== lyricProcessingVersion) return;
       const translated = lyrics.map((l, idx) => {
         if (!l.text) return l;
         const [trans, rom] = batchResults[idx] || ['', ''];
         const localRom = romanizeText(l.text);
         const resolvedRomaji = l.romaji || rom || (localRom !== l.text ? localRom : undefined);
-        return {
-          ...l,
-          translation: trans || l.translation || undefined,
-          romaji: resolvedRomaji,
-        };
+        return { ...l, translation: trans || l.translation || undefined, romaji: resolvedRomaji };
       });
+      const isCurrent = sameLyricPath(get().playback.current_track, trackPath);
 
-      const currentTrack = get().currentTrack;
-      const trackUrl = (currentTrack as any)?.url;
-      const isCurrent = pathsEqual(get().playback.current_track, trackPath)
-        || pathsEqual(currentTrack?.path, trackPath)
-        || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, trackPath) : false);
       if (isCurrent) {
         safeSetStorage('aideo-show-translation', 'true');
         set({ lyrics: translated, showTranslation: true });
       }
-    } catch (e) { console.error(e); } finally { set({ isTranslating: false }); }
+    } catch (e) {
+      if (version === lyricProcessingVersion && sameLyricPath(get().playback.current_track, trackPath)) {
+        console.error('Lyric translation failed:', e);
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '歌词翻译失败或超时，请手动重试。', type: 'warning' } }));
+      }
+    } finally {
+      if (version === lyricProcessingVersion) {
+        lyricProcessingTrackPath = null;
+        set({ isTranslating: false, lyricProcessingMode: null });
+      }
+    }
   },
 
   getRomaji: async () => {
     const { lyrics, playback } = get();
-    if (lyrics.length === 0) return;
-    set({ isTranslating: true });
+    const trackPath = playback.current_track;
+    if (!trackPath || lyrics.length === 0) return;
+    if (get().isTranslating && sameLyricPath(lyricProcessingTrackPath, trackPath)) return;
+    // Stale task for another track must never block this one.
+    const version = ++lyricProcessingVersion;
+    lyricProcessingTrackPath = trackPath;
+    set({ isTranslating: true, lyricProcessingMode: 'romaji' });
     try {
-      const trackPath = playback.current_track;
       const texts = lyrics.map(l => (l.romaji ? '' : (l.text || '')));
-      let batchResults: [string, string][] = [];
-      try {
-        batchResults = await invoke<[string, string][]>('translate_lyrics_batch', { lines: texts });
-      } catch (err) {
-        console.error('Batch romaji invoke failed:', err);
-      }
-
+      const batchResults = await withLyricProcessingTimeout(
+        invoke<[string, string][]>('translate_lyrics_batch', { lines: texts })
+      );
+      if (version !== lyricProcessingVersion) return;
       const withRomaji = lyrics.map((l, idx) => {
-        if (!l.text) return l;
-        if (l.romaji) return l;
+        if (!l.text || l.romaji) return l;
         const [, rom] = batchResults[idx] || ['', ''];
         const localRom = romanizeText(l.text);
-        const resolvedRomaji = rom || (localRom !== l.text ? localRom : undefined);
-        return {
-          ...l,
-          romaji: resolvedRomaji,
-        };
+        return { ...l, romaji: rom || (localRom !== l.text ? localRom : undefined) };
       });
+      const isCurrent = sameLyricPath(get().playback.current_track, trackPath);
 
-      const currentTrack = get().currentTrack;
-      const trackUrl = (currentTrack as any)?.url;
-      const isCurrent = pathsEqual(get().playback.current_track, trackPath)
-        || pathsEqual(currentTrack?.path, trackPath)
-        || (typeof trackUrl === 'string' && trackUrl ? pathsEqual(trackUrl, trackPath) : false);
       if (isCurrent) {
         safeSetStorage('aideo-show-romaji', 'true');
         set({ lyrics: withRomaji, showRomaji: true });
       }
-    } catch (e) { console.error(e); } finally { set({ isTranslating: false }); }
+    } catch (e) {
+      if (version === lyricProcessingVersion && sameLyricPath(get().playback.current_track, trackPath)) {
+        console.error('Lyric romaji failed:', e);
+        window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '罗马音处理失败或超时，请手动重试。', type: 'warning' } }));
+      }
+    } finally {
+      if (version === lyricProcessingVersion) {
+        lyricProcessingTrackPath = null;
+        set({ isTranslating: false, lyricProcessingMode: null });
+      }
+    }
   },
-
   applyOnlineCover: async (path: string, url: string) => {
     try {
       await invoke('apply_online_cover', { path, url });

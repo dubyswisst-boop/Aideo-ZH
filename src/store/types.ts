@@ -473,6 +473,7 @@ export interface PlayerState {
   fetchLibraryPage: (offset: number, limit: number, search?: string, sortBy?: string) => Promise<{ tracks: Track[]; total: number; offset: number; limit: number }>;
   fetchLibraryCount: (search?: string) => Promise<number>;
   isTranslating: boolean;
+  lyricProcessingMode: 'translation' | 'romaji' | null;
   showRomaji: boolean;
   showTranslation: boolean;
   showLyricsHeader: boolean;
@@ -658,6 +659,7 @@ export interface PlayerState {
   setLyricsDisplayMode: (mode: LyricsDisplayMode) => void;
   saveLyrics: (path: string, lrc: string, origin?: 'manual' | 'auto', expectedManualEpoch?: number) => Promise<boolean>;
   autoFetchLyricsOnline: (track: Track) => Promise<void>;
+  invalidateLyricProcessing: () => void;
   translateLyrics: () => Promise<void>;
   getRomaji: () => Promise<void>;
   applyOnlineCover: (path: string, url: string) => Promise<void>;
