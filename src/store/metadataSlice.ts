@@ -209,16 +209,11 @@ export const createMetadataSlice: StateCreator<PlayerState, [], [], any> = (set,
   saveLyrics: async (path: string, lrc: string) => {
     try {
       await invoke('save_lyrics_file', { path, content: lrc });
+      // Save only to the explicitly requested track. Never copy a delayed result
+      // into whichever song happens to be playing when this await resumes.
+      const lines: any = await invoke('get_lyrics', { path });
       const currentTrack = get().currentTrack;
       const playbackCurrent = get().playback.current_track;
-      // Dual-key caching: also cache under playback.current_track if distinct so DesktopLyricBar matches immediately
-      if (playbackCurrent && !pathsEqual(playbackCurrent, path)) {
-        await invoke('save_lyrics_file', { path: playbackCurrent, content: lrc }).catch(() => {});
-      }
-      if (currentTrack?.path && !pathsEqual(currentTrack.path, path)) {
-        await invoke('save_lyrics_file', { path: currentTrack.path, content: lrc }).catch(() => {});
-      }
-      const lines: any = await invoke('get_lyrics', { path });
       const trackUrl = (currentTrack as any)?.url;
       const isCurrent = pathsEqual(playbackCurrent, path)
         || pathsEqual(currentTrack?.path, path)
