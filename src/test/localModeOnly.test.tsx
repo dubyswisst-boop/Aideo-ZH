@@ -208,7 +208,7 @@ describe('Local File Only Mode (appMode === "local")', () => {
     const { container } = render(<AideoSearchBar variant="pill" props={mockSearchProps} />);
     expect(container.querySelector('.unified-source-filter')).toBeNull();
     const input = screen.getByRole('textbox');
-    expect(input).toHaveAttribute('placeholder', 'Search local music library…');
+    expect(input).toHaveAttribute('placeholder', '搜索本地音乐库…');
   });
 
   it('shows source filter dropdown in AideoSearchBar when appMode is hybrid', () => {

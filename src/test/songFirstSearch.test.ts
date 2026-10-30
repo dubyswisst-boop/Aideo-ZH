@@ -118,12 +118,12 @@ describe('Song-first search', () => {
       return String(cmd).includes('search') ? [] : null;
     });
     render(createElement(AideoView));
-    const input = screen.getByRole('textbox', { name: aideoPageDesign === 'classic' ? '' : 'Search songs and sources' });
+    const input = screen.getByRole('textbox', { name: aideoPageDesign === 'classic' ? '' : '搜索歌曲与音源' });
     fireEvent.change(input, { target: { value: 'Song' } });
     fireEvent.submit(input.closest('form')!);
     await screen.findByRole('region', { name: 'Unified search results' });
     fireEvent.click(screen.getByText('Source filter: All sources'));
-    fireEvent.click(screen.getByRole('button', { name: 'Webstream' }));
+    fireEvent.click(screen.getByRole('button', { name: '在线音源' }));
     expect(await screen.findByRole('button', { name: 'Play Song by Artist' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Tidal' }));
     expect(await screen.findByRole('button', { name: 'Play Song by Artist' })).toBeVisible();
