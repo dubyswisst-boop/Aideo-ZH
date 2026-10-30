@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Aideo-ZH CSS sidebar layout fixture (not the full app)</title>
+<link rel="stylesheet" href="/src/App.css"/>
+<style>
+/* Only fixture content styling. Real sidebar rules come from src/App.css. */
+.fixture-icon{display:inline-flex;flex:0 0 18px;width:18px;height:18px;align-items:center;justify-content:center}
+.fixture-main-content{padding:54px 40px;font-size:20px}
+.fixture-main-content p{font-size:13px}
+.fixture-player{background:#191e2b;color:#fff;display:flex;align-items:center;justify-content:center}
+</style>
+</head><body>
+<div id="app" class="app sidebar-auto-hidden sidebar-collapsed playerbar-classic">
+  <div class="sidebar-hover-zone" aria-hidden="true"></div>
+  <aside class="app-sidebar" aria-label="Sidebar fixture">
+    <div class="sidebar-logo"><span class="sidebar-logo-name">Aideo</span>
+      <button type="button" class="sidebar-toggle-btn" aria-label="Expand Sidebar">⇄</button></div>
+    <div class="sidebar-section"><div class="sidebar-section-label">导航</div></div>
+    <div class="nav-item active"><b class="fixture-icon">⌂</b><span>首页</span></div>
+    <div class="nav-item"><b class="fixture-icon">♫</b><span>音乐库</span></div>
+    <div class="nav-item"><b class="fixture-icon">▶</b><span>正在播放</span></div>
+    <div class="nav-item"><b class="fixture-icon">⚙</b><span>设置</span></div>
+  </aside>
+  <main class="app-main"><div class="fixture-main-content"><h2>主界面测试区域</h2><p>侧栏应覆盖而不挤压这里。</p></div></main>
+  <div class="player-bar fixture-player">底部播放栏测试区域</div>
+</div>
+<script>
+const app=document.getElementById('app'); const edge=document.querySelector('.sidebar-hover-zone');const sidebar=document.querySelector('.app-sidebar');const toggle=document.querySelector('.sidebar-toggle-btn');
+function state(visible,expanded){app.classList.toggle('sidebar-auto-visible',visible);app.classList.toggle('sidebar-auto-expanded',expanded);app.classList.toggle('sidebar-collapsed',!expanded)}
+edge.addEventListener('mouseenter',()=>state(true,false));
+toggle.addEventListener('click',()=>state(true,!app.classList.contains('sidebar-auto-expanded')));
+sidebar.addEventListener('mouseleave',()=>state(false,false));
+window.fixtureSetState=state;
+</script>
+</body></html>

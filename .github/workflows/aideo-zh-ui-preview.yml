@@ -1,0 +1,38 @@
+name: Aideo-ZH UI Preview Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/App.css'
+      - 'tools/ui-preview/**'
+      - '.github/workflows/aideo-zh-ui-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  sidebar-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright only for layout test
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install Chromium dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Browser layout checks and screenshots
+        run: node tools/ui-preview/test-sidebar.mjs
+      - name: Upload report even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aideo-zh-sidebar-layout-report
+          path: tools/ui-preview/output/
+          if-no-files-found: warn
+          retention-days: 14
