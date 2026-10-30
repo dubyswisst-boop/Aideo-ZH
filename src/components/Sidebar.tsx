@@ -7,7 +7,7 @@ import { save, open } from '@tauri-apps/plugin-dialog';
 import { SmartPlaylistBuilderModal } from './SmartPlaylistBuilderModal';
 import { useTranslation } from '../i18n';
 
-export function Sidebar({ expanded, onToggleExpansion, onMouseLeave }: { expanded: boolean; onToggleExpansion: () => void; onMouseLeave?: () => void }) {
+export function Sidebar({ expanded = true, onToggleExpansion = () => {}, onMouseLeave }: { expanded?: boolean; onToggleExpansion?: () => void; onMouseLeave?: () => void } = {}) {
   const { t } = useTranslation();
   const sidebarCollapsed = !expanded;
   const { 
