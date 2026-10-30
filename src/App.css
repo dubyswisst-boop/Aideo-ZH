@@ -10458,3 +10458,30 @@ html[lang="zh-CN"] textarea {
 }
 /* Keep the edge trigger and the actual theater hide policy intact. */
 .app.sidebar-auto-hidden.theater-active .app-sidebar { display: none !important; }
+
+/* V10 NOWPLAYING PLAYERBAR AUTOHIDE - managed by playerbar-autohide.ps1 */
+/* Only Now Playing: main content stays full height and the player bar is an overlay. */
+.app.nowplaying-playerbar-autohide .player-bar {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  grid-column: 1 / -1;
+  grid-row: auto;
+  width: 100%;
+  transform: translateY(calc(100% - 6px));
+  opacity: 1;
+  transition: transform 200ms ease;
+  z-index: 2000;
+}
+.app.nowplaying-playerbar-autohide.playerbar-revealed .player-bar,
+.app.nowplaying-playerbar-autohide .player-bar:focus-within {
+  transform: translateY(0);
+}
+/* Prevent clipped content from changing height between hidden and shown states. */
+.app.nowplaying-playerbar-autohide .nowplaying {
+  padding-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app.nowplaying-playerbar-autohide .player-bar { transition: none; }
+}

@@ -187,6 +187,15 @@ function AideoApp() {
     accentColor: s.accentColor,
   })));
   const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);
+  const [playerBarRevealed, setPlayerBarRevealed] = useState(false);
+  // The main view already uses a full-height overlay; the player bar floats over it.
+  const playerBarHeight = playerBarDesign === 'minimal' ? 54 : playerBarDesign === 'waveform' ? 104 : playerBarDesign === 'floating' ? 90 : playerBarDesign === 'vinyl' ? 96 : 96;
+  const handlePlayerBarPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (view !== 'nowplaying') return;
+    const distanceFromBottom = event.currentTarget.getBoundingClientRect().bottom - event.clientY;
+    if (distanceFromBottom <= 12) setPlayerBarRevealed(true);
+    else if (distanceFromBottom > playerBarHeight + 12) setPlayerBarRevealed(false);
+  };
   const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   // A collapse can emit mouseleave because the overlay shrinks under the pointer.
@@ -1022,7 +1031,7 @@ function AideoApp() {
 
   return (
     <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
-      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${sidebarExpanded ? "sidebar-auto-expanded" : ""} ${view === "fullscreen" ? "theater-active" : ""}`}>
+      <div onPointerMove={handlePlayerBarPointerMove} onPointerLeave={() => setPlayerBarRevealed(false)} className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${sidebarExpanded ? "sidebar-auto-expanded" : ""} ${view === "fullscreen" ? "theater-active" : ""} ${view === "nowplaying" ? "nowplaying-playerbar-autohide" : ""} ${playerBarRevealed ? "playerbar-revealed" : ""}`}>
         <div className="sidebar-hover-zone" onMouseEnter={() => setSidebarAutoVisible(true)} aria-hidden="true" />
         <Sidebar expanded={sidebarExpanded} onToggleExpansion={toggleSidebarExpansion} onMouseLeave={onSidebarMouseLeave} />
         {view !== "fullscreen" && <WindowChrome />}

@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../src/App.css">
+<style>html,body{margin:0;width:100%;height:100%;} .app{width:100vw;height:100vh;} .app-main{background:#101019;} .nowplaying{background:#101019;} .player-bar{box-sizing:border-box;min-height:96px;} .player-bar.design-waveform{height:104px}.player-bar.design-minimal{height:54px;min-height:54px}.player-bar.design-floating{height:90px;min-height:90px}.player-bar.design-vinyl{height:96px}.player-bar.design-classic{height:96px} .test-btn{pointer-events:auto;position:relative;z-index:2}</style></head>
+<body><div id="app" class="app sidebar-auto-hidden nowplaying-playerbar-autohide playerbar-classic"><main class="app-main"><div class="nowplaying" id="main-content"><div style="padding:48px">内容区不重排 <button id="main-btn">主区按钮</button></div></div></main><div id="bar" class="player-bar design-classic"><button id="bar-btn" class="test-btn">播放</button><input id="volume" aria-label="音量" type="range"/></div></div>
+<script>
+const root=document.getElementById('app'), bar=document.getElementById('bar');let revealed=false;
+const heights={classic:96,floating:90,waveform:104,minimal:54,vinyl:96};
+window.setDesign=(d)=>{root.className='app sidebar-auto-hidden nowplaying-playerbar-autohide playerbar-'+d+(revealed?' playerbar-revealed':'');bar.className='player-bar design-'+d;};
+root.addEventListener('pointermove',(e)=>{const bottom=root.getBoundingClientRect().bottom;const distance=bottom-e.clientY;const m=root.className.match(/playerbar-(classic|floating|waveform|minimal|vinyl)/);const h=heights[m?.[1]||'classic'];if(distance<=12){revealed=true;}else if(distance>h+12){revealed=false;}root.classList.toggle('playerbar-revealed',revealed);});
+root.addEventListener('pointerleave',()=>{revealed=false;root.classList.remove('playerbar-revealed')});
+window.snapshot=()=>({revealed,main:document.getElementById('main-content').getBoundingClientRect().toJSON(),bar:bar.getBoundingClientRect().toJSON(),root:root.getBoundingClientRect().toJSON()});
+</script></body></html>
