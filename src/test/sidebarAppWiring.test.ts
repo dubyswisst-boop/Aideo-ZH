@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import ts from 'typescript';
 
 // Source-bound checks for real App.tsx. These DO NOT mount App or simulate Tauri.
-const file = readFileSync(new URL('../App.tsx', import.meta.url), 'utf8');
+const file = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
 const sf = ts.createSourceFile('App.tsx', file, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const all = (node: ts.Node): ts.Node[] => {
   const items: ts.Node[] = [node];
@@ -61,7 +62,7 @@ describe('App.tsx actual sidebar state/event wiring (static contract)', () => {
   });
   it('ties theater mode to hidden sidebar CSS class', () => {
     expect(file).toContain('${view === "fullscreen" ? "theater-active" : ""}');
-    const css = readFileSync(new URL('../App.css', import.meta.url), 'utf8');
+    const css = readFileSync(resolve(process.cwd(), 'src/App.css'), 'utf8');
     expect(css).toMatch(/\.app\.sidebar-auto-hidden\.theater-active\s+\.app-sidebar[\s\S]*?display:\s*none\s*!important/);
   });
 });
