@@ -188,6 +188,7 @@ function AideoApp() {
   })));
   const [systemIsLight, setSystemIsLight] = useState(window.matchMedia('(prefers-color-scheme: light)').matches);
   const [sidebarAutoVisible, setSidebarAutoVisible] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const blockLockedTheaterInput = (event: KeyboardEvent) => {
@@ -993,9 +994,9 @@ function AideoApp() {
 
   return (
     <MotionConfig reducedMotion={lowSpecMode ? "always" : "user"}>
-      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${view === "fullscreen" ? "theater-active" : ""}`}>
+      <div className={`${lowSpecMode ? "app low-spec" : "app"} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isLightTheme ? "light-theme" : ""} playerbar-${playerBarDesign} ${playerBarTransparent ? "playerbar-transparent" : ""} sidebar-auto-hidden ${sidebarAutoVisible ? "sidebar-auto-visible" : ""} ${sidebarExpanded ? "sidebar-auto-expanded" : ""} ${view === "fullscreen" ? "theater-active" : ""}`}>
         <div className="sidebar-hover-zone" onMouseEnter={() => setSidebarAutoVisible(true)} aria-hidden="true" />
-        <Sidebar onMouseLeave={() => setSidebarAutoVisible(false)} />
+        <Sidebar expanded={sidebarExpanded} onToggleExpansion={() => setSidebarExpanded(value => !value)} onMouseLeave={() => { setSidebarAutoVisible(false); setSidebarExpanded(false); }} />
         {view !== "fullscreen" && <WindowChrome />}
       <main className="app-main">
         {/* Keep the core heavy views mounted to ensure buttery-smooth instant transitions without re-mounting lag */}

@@ -7,8 +7,9 @@ import { save, open } from '@tauri-apps/plugin-dialog';
 import { SmartPlaylistBuilderModal } from './SmartPlaylistBuilderModal';
 import { useTranslation } from '../i18n';
 
-export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {
+export function Sidebar({ expanded, onToggleExpansion, onMouseLeave }: { expanded: boolean; onToggleExpansion: () => void; onMouseLeave?: () => void }) {
   const { t } = useTranslation();
+  const sidebarCollapsed = !expanded;
   const { 
     view, 
     setView, 
@@ -23,8 +24,6 @@ export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {
     lastfmSessionKey,
     listenbrainzToken,
     appMode,
-    sidebarCollapsed,
-    toggleSidebarCollapsed,
     smartPlaylists,
     deleteSmartPlaylist,
     sidebarNavItems
@@ -42,8 +41,6 @@ export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {
     lastfmSessionKey: s.lastfmSessionKey,
     listenbrainzToken: s.listenbrainzToken,
     appMode: s.appMode,
-    sidebarCollapsed: s.sidebarCollapsed,
-    toggleSidebarCollapsed: s.toggleSidebarCollapsed,
     smartPlaylists: s.smartPlaylists || [],
     deleteSmartPlaylist: s.deleteSmartPlaylist,
     sidebarNavItems: s.sidebarNavItems || [],
@@ -152,7 +149,7 @@ export function Sidebar({ onMouseLeave }: { onMouseLeave?: () => void } = {}) {
         )}
         <button 
           className="sidebar-toggle-btn" 
-          onClick={toggleSidebarCollapsed}
+          onClick={onToggleExpansion}
           title={t(sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar')}
         >
           {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

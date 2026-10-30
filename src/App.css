@@ -10377,3 +10377,40 @@ html[lang="zh-CN"] select,
 html[lang="zh-CN"] textarea {
   font-family: "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
+
+/* Aideo-ZH V10 Stage 2: three-state sidebar, hidden -> icon rail -> full overlay. */
+.app.sidebar-auto-hidden { grid-template-columns: 0 minmax(0, 1fr) !important; }
+.app.sidebar-auto-hidden .app-sidebar {
+  left: 0; top: 34px; bottom: var(--player-h, 96px); height: auto;
+  width: 50px; max-width: none; transform: translateX(-110%);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: 2601; overflow: hidden; box-sizing: border-box;
+  transition: width 180ms ease, transform 180ms ease, opacity 180ms ease, visibility 180ms ease;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .app-sidebar {
+  width: 50px; transform: translateX(0); opacity: 1; visibility: visible;
+  pointer-events: auto; overflow: hidden;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible.sidebar-auto-expanded .app-sidebar {
+  width: min(270px, 85vw); max-width: 85vw;
+  overflow-x: hidden; overflow-y: auto;
+  box-shadow: 14px 0 40px rgba(0,0,0,.55);
+}
+.app.sidebar-auto-hidden:not(.sidebar-auto-expanded) .app-sidebar .sidebar-logo-name,
+.app.sidebar-auto-hidden:not(.sidebar-auto-expanded) .app-sidebar .sidebar-section,
+.app.sidebar-auto-hidden:not(.sidebar-auto-expanded) .app-sidebar .nav-item span { display: none !important; }
+.app.sidebar-auto-hidden.sidebar-auto-visible:not(.sidebar-auto-expanded) .app-sidebar .nav-item {
+  width: 44px; min-width: 44px; max-width: 44px;
+  margin-left: auto; margin-right: auto; padding-left: 0 !important; padding-right: 0 !important;
+  display: flex; justify-content: center; align-items: center;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible:not(.sidebar-auto-expanded) .app-sidebar .sidebar-logo {
+  justify-content: center !important; padding: 0 !important;
+}
+.app.sidebar-auto-hidden .sidebar-hover-zone {
+  width: 7px; left: 0; top: 34px; bottom: var(--player-h, 96px);
+  z-index: 2600; pointer-events: auto;
+}
+.app.sidebar-auto-hidden.sidebar-auto-visible .sidebar-hover-zone { pointer-events: none; }
+.app.sidebar-auto-hidden.theater-active .app-sidebar,
+.app.sidebar-auto-hidden.theater-active .sidebar-hover-zone { display: none !important; }
