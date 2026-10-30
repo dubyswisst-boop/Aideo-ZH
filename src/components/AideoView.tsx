@@ -1503,14 +1503,14 @@ export function AideoView() {
     else setGreeting('Good evening');
   }, []);
 
-  // Compute "Recently Played" Track Objects
+  // Compute "最近播放" Track Objects
   const recentTracks = [...playHistory]
     .reverse()
     // Show unique recent tracks, maintaining order (most recent first)
     .filter((track, index, history) => history.findIndex(candidate => sameRecommendationRecording(candidate, track)) === index)
     .slice(0, 15);
 
-  // Compute "Quick Recap" Tracks (frequently played)
+  // Compute "快速回顾" Tracks (frequently played)
   let recapTracks = [...tracks]
     .filter(t => (playCounts[t.path] || 0) > 0)
     .sort((a, b) => (playCounts[b.path] || 0) - (playCounts[a.path] || 0))
@@ -2054,7 +2054,7 @@ export function AideoView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: discoveryLayout === 'shelves' ? 12 : 0 }}>
             {discoveryLayout === 'shelves' ? (
               <>
-                {/* Shelf 1: Jump Back In (Recently Played) */}
+                {/* Shelf 1: Jump Back In (最近播放) */}
                 {discoveryData.recently_played && discoveryData.recently_played.length > 0 && (
                   <div className="discovery-shelf-section" style={{ marginBottom: 28 }}>
                     <div className="discovery-shelf-header">
@@ -2260,7 +2260,7 @@ export function AideoView() {
   const renderQuickRecapSection = () => {
     return (
       <section className="aideo-section">
-        <h2 className="aideo-sec-title">Quick Recap</h2>
+        <h2 className="aideo-sec-title">快速回顾</h2>
         {recapTracks.length > 0 ? (
           <div className="aideo-recap-grid">
             {recapTracks.map((t) => (
@@ -2313,9 +2313,9 @@ export function AideoView() {
         ) : (
           <div className="aideo-empty-box">
             <Music size={32} style={{ marginBottom: 12, color: 'var(--accent)' }} />
-            <p style={{ marginBottom: 16 }}>Add folders in settings to scan and load tracks into your library.</p>
+            <p style={{ marginBottom: 16 }}>请先在设置中添加音乐文件夹，以扫描歌曲并导入音乐库。</p>
             <button className="btn btn-primary" onClick={() => setView('settings')} style={{ padding: '8px 16px', fontSize: 12 }}>
-              Open Settings
+              打开设置
             </button>
           </div>
         )}
@@ -2326,7 +2326,7 @@ export function AideoView() {
   const renderRecentlyPlayedSection = () => {
     return (
       <section className="aideo-section" style={{ marginBottom: 40 }}>
-        <h2 className="aideo-sec-title">Recently Played</h2>
+        <h2 className="aideo-sec-title">最近播放</h2>
         {recentTracks.length > 0 ? (
           <div className="aideo-carousel">
             {recentTracks.map(t => (
@@ -2375,7 +2375,7 @@ export function AideoView() {
         ) : (
           <div className="aideo-empty-box">
             <History size={32} />
-            <p>Your play history is empty. Listen to some tracks from your library first!</p>
+            <p>播放历史为空。请先播放音乐库中的歌曲。</p>
           </div>
         )}
       </section>
@@ -2385,8 +2385,8 @@ export function AideoView() {
   const renderSmartMixBuilderSection = () => {
     return (
       <section className="aideo-section" style={{ marginBottom: 32 }}>
-        <h2 className="aideo-sec-title">Smart Mix Builder</h2>
-        <p className="aideo-subtitle" style={{ marginBottom: 16 }}>Create a mix from your library based on a mood and listening history.</p>
+        <h2 className="aideo-sec-title">智能混音生成器</h2>
+        <p className="aideo-subtitle" style={{ marginBottom: 16 }}>根据心情与收听历史，从音乐库中生成混音歌单。</p>
 
         <div style={{
           background: 'var(--glass)',
@@ -2402,7 +2402,7 @@ export function AideoView() {
         }}>
           {/* Mood Selector */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Select Mood Profile</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>选择心情类型</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {['Energetic', 'Chill', 'Focus', 'Melancholic', 'Happy'].map(m => {
                 const active = activeMood === m;
@@ -2433,7 +2433,7 @@ export function AideoView() {
 
           {/* Seed Trend Source Selector */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Listening history source</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>收听历史来源</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {['Library History', 'Last.fm Trends', 'ListenBrainz Scrobbles'].map(s => {
                 const active = activeSource === s;
@@ -2488,11 +2488,11 @@ export function AideoView() {
             >
               {generatingMix ? (
                 <>
-                  <Loader2 className="spin" size={15} /> Creating mix...
+                  <Loader2 className="spin" size={15} /> 正在生成混音歌单…
                 </>
               ) : (
                 <>
-                  <Sparkles size={15} /> Generate & Play Smart Mix
+                  <Sparkles size={15} /> 生成并播放智能混音
                 </>
               )}
             </button>
@@ -2651,10 +2651,10 @@ export function AideoView() {
                 onClick={() => {
                   setMusicSource(src);
                   if (src === 'tidal' && !tidalConnected) {
-                    window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Tidal first in Settings > Library > Tidal.', type: 'warning' } }));
+                    window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在设置 > 音乐库 > Tidal 中连接 Tidal。', type: 'warning' } }));
                   }
                   if (src === 'qobuz' && !qobuzConnected) {
-                    window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Qobuz first in Settings > Library > Qobuz (Experimental).', type: 'warning' } }));
+                    window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在设置 > 音乐库 > Qobuz（实验性）中连接 Qobuz。', type: 'warning' } }));
                   }
                 }}
                 style={{
@@ -3001,10 +3001,10 @@ export function AideoView() {
             !tidalConnected ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, color: 'var(--text-dim)', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 20, gap: 12 }}>
                 <Disc size={36} style={{ color: 'var(--accent)' }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Tidal not connected</span>
-                <span style={{ fontSize: 13 }}>Connect under Settings &gt; Library &gt; Tidal</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Tidal 未连接</span>
+                <span style={{ fontSize: 13 }}>请在设置 &gt; 音乐库 &gt; Tidal 中连接</span>
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Tidal first in Settings > Library > Tidal.', type: 'warning' } }))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在设置 > 音乐库 > Tidal 中连接 Tidal。', type: 'warning' } }))}
                   style={{
                     background: 'var(--glass-h)',
                     border: '1px solid var(--glass-border)',
@@ -3017,7 +3017,7 @@ export function AideoView() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  How to connect
+                  如何连接
                 </button>
               </div>
             ) : tidalSearchResults.length > 0 ? (
@@ -3026,17 +3026,17 @@ export function AideoView() {
               </div>
             ) : (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
-                No Tidal results.
+                未找到 Tidal 结果。
               </div>
             )
           ) : musicSource === 'qobuz' ? (
             !qobuzConnected ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, color: 'var(--text-dim)', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 20, gap: 12 }}>
                 <Disc size={36} style={{ color: 'var(--accent)' }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Qobuz not connected</span>
-                <span style={{ fontSize: 13 }}>Enable and connect under Settings &gt; Library &gt; Qobuz (Experimental)</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Qobuz 未连接</span>
+                <span style={{ fontSize: 13 }}>请在设置 &gt; 音乐库 &gt; Qobuz（实验性）中启用并连接</span>
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: 'Connect to Qobuz first in Settings > Library > Qobuz (Experimental).', type: 'warning' } }))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '请先在设置 > 音乐库 > Qobuz（实验性）中连接 Qobuz。', type: 'warning' } }))}
                   style={{
                     background: 'var(--glass-h)',
                     border: '1px solid var(--glass-border)',
@@ -3049,7 +3049,7 @@ export function AideoView() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  How to connect
+                  如何连接
                 </button>
               </div>
             ) : qobuzSearchResults.length > 0 ? (
@@ -3058,7 +3058,7 @@ export function AideoView() {
               </div>
             ) : (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
-                No Qobuz results.
+                未找到 Qobuz 结果。
               </div>
             )
           ) : artistProfile ? (
@@ -3587,7 +3587,7 @@ export function AideoView() {
                   >
                     {t(greeting)}
                   </motion.h1>
-                  <p className="aideo-subtitle">Your library, listening history, and recommendations.</p>
+                  <p className="aideo-subtitle">音乐库、收听历史与个性化推荐。</p>
                 </div>
                 <div className="aideo-header-stats">
                   <div className="aideo-stat-box">
@@ -3596,7 +3596,7 @@ export function AideoView() {
                   </div>
                   <div className="aideo-stat-box">
                     <span className="aideo-stat-num">{totalPlays}</span>
-                    <span className="aideo-stat-label">Total Plays</span>
+                    <span className="aideo-stat-label">累计播放</span>
                   </div>
                 </div>
               </div>

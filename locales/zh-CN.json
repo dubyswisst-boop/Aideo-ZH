@@ -2480,5 +2480,11 @@
   "请在下方粘贴 LRC 或同步歌词文本。": "请在下方粘贴 LRC 或同步歌词文本。",
   "Last.fm 榜单": "Last.fm 榜单",
   "Tidal 歌曲": "Tidal 歌曲",
-  "布局：{value0}": "布局：{value0}"
+  "布局：{value0}": "布局：{value0}",
+  "请在设置 \u003e 音乐库 \u003e Qobuz（实验性）中启用并连接": "请在设置 \u003e 音乐库 \u003e Qobuz（实验性）中启用并连接",
+  "请在设置 \u003e 音乐库 \u003e Tidal 中连接": "请在设置 \u003e 音乐库 \u003e Tidal 中连接",
+  "Tidal 未连接": "Tidal 未连接",
+  "Qobuz 未连接": "Qobuz 未连接",
+  "未找到 Tidal 结果。": "未找到 Tidal 结果。",
+  "未找到 Qobuz 结果。": "未找到 Qobuz 结果。"
 }
