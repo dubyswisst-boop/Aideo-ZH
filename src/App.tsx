@@ -732,6 +732,11 @@ function AideoApp() {
 
       let theaterLockTransitionPending = false;
       const uTheaterLock = await listen('toggle-theater-lock', async () => {
+        try {
+          const previous = JSON.parse(localStorage.getItem('aideo-hud-p01d') || '[]') as string[];
+          previous.push(`${new Date().toISOString()} FRONTEND_RECEIVED toggle-theater-lock`);
+          localStorage.setItem('aideo-hud-p01d', JSON.stringify(previous.slice(-40)));
+        } catch (_) { /* diagnostics must not affect HUD behavior */ }
         if (isCancelled || theaterLockTransitionPending) return;
         if (useStore.getState().view !== 'fullscreen') {
           window.dispatchEvent(new CustomEvent('ui-toast', {

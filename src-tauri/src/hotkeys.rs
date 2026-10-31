@@ -1,5 +1,15 @@
 use tauri::AppHandle;
 use tauri::Emitter;
+
+// P0.1D diagnostics: best-effort log. Never alters registration decisions.
+fn hud_diag(message: &str) {
+    use std::io::Write;
+    let path = std::env::temp_dir().join("Aideo-HUD-P01D.log");
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(file, "{} {}", now, message);
+    }
+}
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 /// Player actions that can be bound to a global shortcut.
@@ -51,11 +61,20 @@ fn register_bindings(app: &AppHandle, bindings: &[(String, Option<String>)]) -> 
         };
         let action = HotkeyAction::from_id(action_id)
             .ok_or_else(|| format!("Unknown hotkey action: {}", action_id))?;
+        hud_diag(&format!("REGISTER_ATTEMPT action={} accel={}", action_id, accel));
         gs.on_shortcut(accel, move |handle, _shortcut, event| {
             if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                let _ = handle.emit(action.event_name(), ());
+                if action == HotkeyAction::ToggleTheaterLock { hud_diag("KEY_PRESSED toggleTheaterLock"); }
+                let emitted = handle.emit(action.event_name(), ());
+                if action == HotkeyAction::ToggleTheaterLock {
+                    hud_diag(if emitted.is_ok() { "EVENT_EMITTED toggle-theater-lock" } else { "EVENT_EMIT_FAILED toggle-theater-lock" });
+                }
             }
-        }).map_err(|e| format!("Failed to register '{}' for {}: {}", accel, action_id, e))?;
+        }).map_err(|e| {
+            hud_diag(&format!("REGISTER_FAILED action={} accel={} error={}", action_id, accel, e));
+            format!("Failed to register '{}' for {}: {}", accel, action_id, e)
+        })?;
+        hud_diag(&format!("REGISTER_SUCCESS action={} accel={}", action_id, accel));
     }
     Ok(())
 }
@@ -75,19 +94,28 @@ fn validate_bindings(bindings: &[(String, Option<String>)]) -> Result<(), String
 
 pub fn apply_shortcuts(app: &AppHandle, bindings: &[(String, Option<String>)]) -> Result<(), String> {
     static ACTIVE: std::sync::OnceLock<std::sync::Mutex<Vec<(String, Option<String>)>>> = std::sync::OnceLock::new();
-    validate_bindings(bindings)?;
+    hud_diag("APPLY_BEGIN");
+    if let Err(error) = validate_bindings(bindings) {
+        hud_diag(&format!("VALIDATE_FAILED {}", error));
+        return Err(error);
+    }
     let active = ACTIVE.get_or_init(|| std::sync::Mutex::new(Vec::new()));
     let mut guard = active.lock().map_err(|_| "Global shortcut state poisoned".to_string())?;
     let previous = guard.clone();
     let gs = app.global_shortcut();
-    gs.unregister_all().map_err(|e| format!("Cannot clear old global shortcuts: {}", e))?;
+    gs.unregister_all().map_err(|e| {
+        hud_diag(&format!("UNREGISTER_FAILED {}", e));
+        format!("Cannot clear old global shortcuts: {}", e)
+    })?;
     if let Err(error) = register_bindings(app, bindings) {
+        hud_diag(&format!("APPLY_FAILED {}", error));
         let _ = gs.unregister_all();
         if let Err(rollback) = register_bindings(app, &previous) {
             return Err(format!("{}; restore of previous shortcuts also failed: {}", error, rollback));
         }
         return Err(error);
     }
+    hud_diag("APPLY_SUCCESS");
     *guard = bindings.to_vec();
     Ok(())
 }
