@@ -92,7 +92,8 @@ const getSavedGlobalHotkeys = (): Record<string, string | null> => {
   const raw = safeGetStorage('aideo-global-hotkeys');
   if (raw) {
     try {
-      return { ...defaults, ...JSON.parse(raw) };
+      const saved = JSON.parse(raw);
+      return { ...defaults, ...saved, toggleTheaterLock: 'Ctrl+Alt+F12' };
     } catch (_) {}
   }
   return defaults;
@@ -644,9 +645,13 @@ export const createUISlice: StateCreator<PlayerState, [], [], any> = (set, get) 
   },
 
   setGlobalHotkey: (action: string, binding: string | null) => {
+    if (action === 'toggleTheaterLock') {
+      window.dispatchEvent(new CustomEvent('ui-toast', { detail: { message: '影院锁定快捷键固定为 Ctrl+Alt+F12', type: 'warning' } }));
+      return;
+    }
     // Queue updates: the native registration must succeed before persisting a binding.
     globalHotkeyUpdateQueue = globalHotkeyUpdateQueue.then(async () => {
-      const next = { ...get().globalHotkeys, [action]: binding };
+      const next = { ...get().globalHotkeys, [action]: binding, toggleTheaterLock: 'Ctrl+Alt+F12' };
       const payload: Record<string, string | null> = {};
       Object.entries(next).forEach(([k, v]) => { payload[k] = v && v.length > 0 ? v : null; });
       await invoke('set_global_shortcuts', { bindings: payload });

@@ -1225,12 +1225,12 @@ export function SettingsView() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>
             Press Record, then enter key combination with a modifier (Ctrl / Alt / Shift). Press Backspace while recording to clear.
+            Theater HUD Lock is fixed to Ctrl+Alt+F12 and cannot be changed.
           </div>
           {[
             { id: 'playPause', label: 'Play / Pause' },
             { id: 'next', label: 'Next Track' },
-            { id: 'prev', label: 'Previous Track' },
-            { id: 'toggleTheaterLock', label: 'Lock / Unlock Theater to Desktop' }
+            { id: 'prev', label: 'Previous Track' }
           ].map(action => {
             const isRecording = recordingGlobalAction === action.id;
             const binding = globalHotkeys[action.id];
