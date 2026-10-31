@@ -1229,8 +1229,7 @@ export function SettingsView() {
           {[
             { id: 'playPause', label: 'Play / Pause' },
             { id: 'next', label: 'Next Track' },
-            { id: 'prev', label: 'Previous Track' },
-            { id: 'toggleTheaterLock', label: 'Lock / Unlock Theater to Desktop' }
+            { id: 'prev', label: 'Previous Track' }
           ].map(action => {
             const isRecording = recordingGlobalAction === action.id;
             const binding = globalHotkeys[action.id];
@@ -1279,6 +1278,13 @@ export function SettingsView() {
               </div>
             );
           })}
+          <div className="settings-ctrl-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('Lock / Unlock Theater to Desktop')}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>Global shortcut</div>
+            </div>
+            <div style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>Ctrl+Alt+F12</div>
+          </div>
         </div>
       )
     },

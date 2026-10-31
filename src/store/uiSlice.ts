@@ -92,7 +92,14 @@ const getSavedGlobalHotkeys = (): Record<string, string | null> => {
   const raw = safeGetStorage('aideo-global-hotkeys');
   if (raw) {
     try {
-      return { ...defaults, ...JSON.parse(raw) };
+      const saved = JSON.parse(raw) as Record<string, string | null>;
+      const next = { ...defaults, ...saved, toggleTheaterLock: 'Ctrl+Alt+F12' };
+      Object.keys(next).forEach(action => {
+        if (action !== 'toggleTheaterLock' && next[action]?.replace(/\s+/g, '').toLowerCase() === 'ctrl+alt+f12') {
+          next[action] = null;
+        }
+      });
+      return next;
     } catch (_) {}
   }
   return defaults;
@@ -644,9 +651,16 @@ export const createUISlice: StateCreator<PlayerState, [], [], any> = (set, get) 
   },
 
   setGlobalHotkey: (action: string, binding: string | null) => {
+    if (action === 'toggleTheaterLock') return;
+    if (binding?.replace(/\s+/g, '').toLowerCase() === 'ctrl+alt+f12') {
+      window.dispatchEvent(new CustomEvent('ui-toast', {
+        detail: { message: 'Ctrl+Alt+F12 is reserved for Theater HUD Lock.', type: 'warning' }
+      }));
+      return;
+    }
     // Queue updates: the native registration must succeed before persisting a binding.
     globalHotkeyUpdateQueue = globalHotkeyUpdateQueue.then(async () => {
-      const next = { ...get().globalHotkeys, [action]: binding };
+      const next = { ...get().globalHotkeys, [action]: binding, toggleTheaterLock: 'Ctrl+Alt+F12' };
       const payload: Record<string, string | null> = {};
       Object.entries(next).forEach(([k, v]) => { payload[k] = v && v.length > 0 ? v : null; });
       await invoke('set_global_shortcuts', { bindings: payload });
@@ -673,6 +687,9 @@ export const createUISlice: StateCreator<PlayerState, [], [], any> = (set, get) 
     });
     invoke('set_global_shortcuts', { bindings: payload }).catch(e => {
       console.error('Failed to restore global shortcuts:', e);
+      window.dispatchEvent(new CustomEvent('ui-toast', {
+        detail: { message: `Global shortcut registration failed: ${e}`, type: 'error' }
+      }));
     });
   },
 
