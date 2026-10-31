@@ -393,6 +393,36 @@ Aideo is 100% open-source, client-side, and privacy-first. Your music library, p
 * **Helper Tools (`yt-dlp`, `ffmpeg`)**: Used to stream and transcode webstream tracks. All helper tools are verified against official SHA-256 checksums before running.
 * **Windows System Integrations**: Uses official Windows OS APIs for real-time audio scheduling (MMCSS / WASAPI Exclusive mode), Taskbar thumbnail controls, and secure local credential storage (Windows Credential Manager).
 
+
+<!-- AIDEO-ZH-DOC-NAV-START -->
+
+### Development Documentation & Test Records
+
+This section contains historical development records, implementation notes, and validation evidence for the Aideo Chinese localization project.
+
+#### Historical Development Records
+
+| Area | Documentation |
+|---|---|
+| Lyrics | [CI Fix](docs/history/lyrics/README_CI_FIX.md) 路 [P0 Batch 2](docs/history/lyrics/README_LYRICS_P0_BATCH2.md) 路 [P0 Batch 2.1](docs/history/lyrics/README_LYRICS_P0_BATCH21.md) 路 [P0 Batch 2.2](docs/history/lyrics/README_LYRICS_P0_BATCH22.md) 路 [Save Scope](docs/history/lyrics/README_LYRICS_SAVE_SCOPE.md) 路 [Chinese Copy](docs/history/lyrics/README_LYRICS_ZH_COPY.md) |
+| Playerbar | [Auto-hide Implementation](docs/history/playerbar/README_PLAYERBAR_AUTOHIDE.md) |
+| Stage 4 | [Stage 4](docs/history/stage4/README_STAGE4.md) 路 [Stage 4 Fix](docs/history/stage4/README_STAGE4_FIX.md) 路 [URL Fix](docs/history/stage4/README_STAGE4_URL_FIX.md) |
+| UI Preview | [NPM Fix](docs/history/ui-preview/README_UI_PREVIEW_NPM_FIX.md) 路 [Runner Fix](docs/history/ui-preview/README_UI_RUNNER_FIX.md) |
+| V9 | [V9 Development Record](docs/history/v9/README_V9.md) |
+| V10 | [Stage 1](docs/history/v10/README_V10_STAGE1.md) 路 [Stage 2](docs/history/v10/README_V10_STAGE2.md) 路 [Layout](docs/history/v10/README_V10_S2_LAYOUT.md) 路 [TS2739 Fix](docs/history/v10/README_V10_S2_TS2739.md) 路 [Collapse Guard](docs/history/v10/README_V10_S2_COLLAPSE_GUARD.md) |
+| Window | [Window Layout](docs/history/window/README_WINDOW_LAYOUT.md) 路 [Maximize Permission](docs/history/window/README_WINDOW_MAXIMIZE_PERMISSION.md) |
+
+#### Testing & Validation Records
+
+| Area | Documentation |
+|---|---|
+| Lyrics | [P0 Race Validation](docs/testing/lyrics/README_LYRICS_P0_RACE_VALIDATION.md) |
+| Playerbar | [Playerbar Validation](docs/testing/playerbar/README_PLAYERBAR_VALIDATION.md) |
+| UI | [React Sidebar Test](docs/testing/ui/README_REACT_SIDEBAR_TEST.md) 路 [UI Preview](docs/testing/ui/README_UI_PREVIEW.md) 路 [UI State Test](docs/testing/ui/README_UI_STATE_TEST.md) |
+
+**Note:** These documents preserve historical development and testing records. Their presence does not imply that every historical patch or test configuration is part of the current production release.
+
+<!-- AIDEO-ZH-DOC-NAV-END -->
 </details>
 
 ---
