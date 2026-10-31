@@ -1283,7 +1283,7 @@ export function SettingsView() {
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('Lock / Unlock Theater to Desktop')}</div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>Global shortcut</div>
             </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>Ctrl+Alt+F12</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>{globalHotkeys.toggleTheaterLock}</div>
           </div>
         </div>
       )

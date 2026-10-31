@@ -93,7 +93,7 @@ const getSavedGlobalHotkeys = (): Record<string, string | null> => {
   if (raw) {
     try {
       const saved = JSON.parse(raw) as Record<string, string | null>;
-      const next = { ...defaults, ...saved, toggleTheaterLock: 'Ctrl+Alt+F12' };
+      const next: Record<string, string | null> = { ...defaults, ...saved, toggleTheaterLock: 'Ctrl+Alt+F12' };
       Object.keys(next).forEach(action => {
         if (action !== 'toggleTheaterLock' && next[action]?.replace(/\s+/g, '').toLowerCase() === 'ctrl+alt+f12') {
           next[action] = null;
